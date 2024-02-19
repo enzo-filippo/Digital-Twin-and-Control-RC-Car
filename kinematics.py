@@ -26,7 +26,7 @@ class Bicileta:
         self.ang_guinada_ponto = ang_guinada_ponto
         
     def Dinamica(self):
-        
+        self.
 
 class Pneu:
     def __init__(self,distancia_Pneu_CG,raio_Efetivo_Pneu,F_Apoio_Pneu,C_Rigidez_Longi_Pneu,Coef_Rigidez_Deriva_Pneu,Coef_Atrito,p_Longi_Pneu,p_Perpe_Pneu,v_Longi_Pneu,v_Perpe_Pneu,a_Longi_CG_Veiculo_Pneu,a_Perpe_Pneu,v_Angular_Pneu,ang_Pneu,ang_v_Roda,diff_Ang_Pneu_Ang_v_Pneu):
