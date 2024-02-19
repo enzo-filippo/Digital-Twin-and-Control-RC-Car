@@ -48,3 +48,13 @@ def WheelForces(C_tau, tau_x, C_alpha, alpha):
 
 def CoefDugoff(C_tau, C_alpha, alpha, tau_x, mu, F_z):
     lambda_i = (mu*F_z*(1+tau_x))/(2*np.sqrt((C_tau*tau_x)**)+(C_alpha*np.tan(alpha)**))
+    if lambda_i < 1:
+        f_lambda_i = (2-lambda_i)*lambda_i
+    else
+        f_lambda_i = 1
+return f_lambda_i
+
+def ForcesDugoff(C_tau, C_alpha, tau_x, alpha, f_lambda_i):
+    F_xpi = C_tau *(tau_x/(1-tau_x))*f_lambda_i
+    F_ypi = C_alpha*(np.tan(alpha)/(1-tau_x))*f_lambda_i
+return F_xpi, F_ypi
