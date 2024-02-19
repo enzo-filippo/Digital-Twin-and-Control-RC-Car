@@ -4,29 +4,39 @@
 import numpy as np
 
 class Bicileta:
-    def __init__(self, m_CG, momento_INERCIA_CG, distancia_roda_traseira_CG, distancia_roda_dianteira_CG, p_Longi_CG, p_Perpe_CG, v_Longi_CG, v_Perpe_CG, a_Longi_CG_Veiculo, a_Perpe_CG, ang_Bicicleta, ang_v_Bicileta, comprimento_eixo, ang_guinada_ponto):
-        # Psi = ang_Bicicleta 
+    def __init__(self, m_CG, momento_INERCIA_CG, distancia_roda_traseira_CG, distancia_roda_dianteira_CG, p_Longi_CG_Veiculo, p_Perpe_CG_Veiculo, v_Longi_CG_Veiculo, v_Perpe_CG_Veiculo, a_Longi_CG_Veiculo, a_Perpe_CG_Veiculo, ang_bike, ang_v_bike, comprimento_eixo, ang_guinada_pp):
+        # Psi = ang_bike 
         # lr = distancia_roda_traseira_CG
         # lf = distancia_roda_dianteira_CG
         
-
+        self.Roda_dianteira = Pneu()
+        self.Roda_traseira = Pneu()
         self.m_CG = m_CG
         self.momento_INERCIA_CG = momento_INERCIA_CG
         self.distancia_roda_traseira_CG = distancia_roda_traseira_CG 
         self.distancia_roda_dianteira_CG = distancia_roda_dianteira_CG
-        self.p_Longi_CG = p_Longi_CG
-        self.p_Perpe_CG = p_Perpe_CG
-        self.v_Longi_CG = v_Longi_CG
-        self.v_Perpe_CG = v_Perpe_CG
+        self.p_Longi_CG_Veiculo = p_Longi_CG_Veiculo
+        self.p_Perpe_CG_Veiculo = p_Perpe_CG_Veiculo
+        self.v_Longi_CG_Veiculo = v_Longi_CG_Veiculo
+        self.v_Perpe_CG_Veiculo = v_Perpe_CG_Veiculo
         self.a_Longi_CG_Veiculo = a_Longi_CG_Veiculo
-        self.a_Perpe_CG = a_Perpe_CG
-        self.ang_Bicicleta = ang_Bicicleta
-        self.ang_v_Bicileta = ang_v_Bicileta
+        self.a_Perpe_CG_Veiculo = a_Perpe_CG_Veiculo
+        self.ang_bike = ang_bike
+        self.ang_v_bike = ang_v_bike
         self.comprimento_eixo = comprimento_eixo
-        self.ang_guinada_ponto = ang_guinada_ponto
+        self.ang_guinada_pp = ang_guinada_pp
         
-    def Dinamica(self):
-        self.
+    def Dinamica(self,dt,s_p0_Longi_CG_Veiculo,s_p0_Perpe_CG_Veiculo, v0_Longi_CG_Veiculo, v0_Perpe_CG_Veiculo,ang0_bike_CG_Veiculo,v_ang0_bike_CG_Veiculo):
+        self.a_Longi_CG_Veiculo = (self.Roda_dianteira.F_Longi_Pneu_Cord_Bike+self.Roda_traseira.F_Longi_Pneu_Cord_Bike)/self.m_CG
+        self.a_Perpe_CG_Veiculo = (self.Roda_dianteira.F_Perpe_Pneu_Cord_Bike+self.Roda_traseira.F_Perpe_Pneu_Cord_Bike)/self.m_CG
+        self.ang_guinada_pp = (self.distancia_roda_dianteira_CG*self.Roda_dianteira.F_Perpe_Pneu_Cord_Bike-self.distancia_roda_traseira_CG*self.Roda_traseira.F_Perpe_Pneu_Cord_Bike)/self.momento_INERCIA_CG  
+        self.p_Longi_CG_Veiculo = s_p0_Longi_CG_Veiculo + v0_Longi_CG_Veiculo*dt + (1/2)*self.a_Longi_CG_Veiculo*dt**2
+        self.p_Perpe_CG_Veiculo = s_p0_Perpe_CG_Veiculo + v0_Perpe_CG_Veiculo*dt + (1/2)*self.a_Perpe_CG_Veiculo*dt**2
+        self.v_Longi_CG_Veiculo = v0_Longi_CG_Veiculo + self.a_Longi_CG_Veiculo*dt
+        self.v_Perpe_CG_Veiculo = v0_Perpe_CG_Veiculo + self.a_Perpe_CG_Veiculo*dt
+        self.ang_bike = ang0_bike_CG_Veiculo + v_ang0_bike_CG_Veiculo*dt + (1/2)*self.ang_guinada_pp*dt**2
+        self.v_ang_bike = v_ang0_bike_CG_Veiculo + self.ang_guinada_pp*dt
+
 
 class Pneu:
     def __init__(self,distancia_Pneu_CG,raio_Efetivo_Pneu,F_Apoio_Pneu,C_Rigidez_Longi_Pneu,Coef_Rigidez_Deriva_Pneu,Coef_Atrito,p_Longi_Pneu,p_Perpe_Pneu,v_Longi_Pneu,v_Perpe_Pneu,a_Longi_CG_Veiculo_Pneu,a_Perpe_Pneu,v_Angular_Pneu,ang_Pneu,ang_v_Roda,diff_Ang_Pneu_Ang_v_Pneu):
@@ -50,7 +60,7 @@ class Pneu:
        
     
 
-    def Dinamica(self,delta_pneu,roda,comprimento_eixo, ang_guinada_ponto,v_Longi_CG_Veiculo, a_Longi_CG_Veiculo): 
+    def Dinamica(self,delta_pneu,roda,comprimento_eixo, ang_guinada_pp,v_Longi_CG_Veiculo, a_Longi_CG_Veiculo): 
         
         ## Taxa Deslizamento -----------------------------
         
@@ -76,12 +86,12 @@ class Pneu:
         # mu = self.Coef_Atrito
         # F_zy = self.F_Apoio_Pneu
         # F_xpi = self.F_Longi_Pneu
-        # F_ypi = self.F_Lateral_Pneu
+        # F_ypi = self.F_Perpe_Pneu
         
         sinal_numerador = np.array([-1, 1, 1, -1])
         sinal_denominador = np.array([1, 1, -1, -1])
-        numerador = self.v_Perpe_Pneu + sinal_numerador(roda)*self.distancia_Pneu_CG * ang_guinada_ponto
-        denominador = self.v_Longi_Pneu + sinal_denominador(roda)*comprimento_eixo/2 * ang_guinada_ponto
+        numerador = self.v_Perpe_Pneu + sinal_numerador(roda)*self.distancia_Pneu_CG * ang_guinada_pp
+        denominador = self.v_Longi_Pneu + sinal_denominador(roda)*comprimento_eixo/2 * ang_guinada_pp
 
         self.ang_v_pneu = np.arctan(numerador/denominador)
         self.diff_Ang_Pneu_Ang_v_Pneu = delta_pneu - self.ang_v_pneu
@@ -93,8 +103,8 @@ class Pneu:
             self.f_lambda = 1    
         
         self.F_Longi_Pneu = self.Coef_Rigidez_Deriva_Pneu *(self.taxa_Desliz_Longi/(1-self.taxa_Desliz_Longi))*self.f_lambda
-        self.F_Lateral_Pneu = self.C_Rigidez_Longi_Pneu*(np.tan(self.diff_Ang_Pneu_Ang_v_Pneu)/(1-self.taxa_Desliz_Longi))*self.f_lambda
+        self.F_Perpe_Pneu = self.C_Rigidez_Longi_Pneu*(np.tan(self.diff_Ang_Pneu_Ang_v_Pneu)/(1-self.taxa_Desliz_Longi))*self.f_lambda
 
-        self.F_Longi_Pneu_Cord_Bike = self.F_Longi_Pneu*np.cos(delta_pneu)-self.F_Lateral_Pneu*np.sin(delta_pneu)
-        self.F_Lateral_Pneu_Cord_Bike = self.F_Longi_Pneu*np.sin(delta_pneu)+self.F_Lateral_Pneu*np.cos(delta_pneu)
-        return self.F_Longi_Pneu_Cord_Bike, self.F_Lateral_Pneu_Cord_Bike
+        self.F_Longi_Pneu_Cord_Bike = self.F_Longi_Pneu*np.cos(delta_pneu)-self.F_Perpe_Pneu*np.sin(delta_pneu)
+        self.F_Perpe_Pneu_Cord_Bike = self.F_Longi_Pneu*np.sin(delta_pneu)+self.F_Perpe_Pneu*np.cos(delta_pneu)
+        return self.F_Longi_Pneu_Cord_Bike, self.F_Perpe_Pneu_Cord_Bike
