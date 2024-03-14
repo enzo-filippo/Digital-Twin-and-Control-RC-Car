@@ -103,14 +103,14 @@ class wheel():
 
         if(self.lr != 0):
             signal = -1
-        if(self.lf != 0):
+        elif(self.lf != 0):
             signal = 1
 
         numerador = Vy + self.lf * psi_p - self.lr * psi_p
         denominador = Vx + signal*self.Lw/2 * psi_p
 
-        self.theta_V = np.arctan(numerador/denominador)
-        alpha = delta - self.theta_V
+        theta_V = np.arctan(numerador/denominador)
+        alpha = delta - theta_V
 
         C_lambda = (self.mi * self.Fz*(1+tau))/(2*np.sqrt(self.C_tau*tau)**2 + self.C_alpha*np.tan(alpha)**2) 
         if C_lambda < 1:
@@ -123,6 +123,7 @@ class wheel():
 
         self.Fx = Fxp*np.cos(delta) - Fyp*np.sin(delta)
         self.Fy = Fxp*np.sin(delta) + Fyp*np.cos(delta)
+        print(self.Fx, self.Fy)
 
 def vectorfield(w, t, coef):
     """
@@ -139,6 +140,7 @@ def vectorfield(w, t, coef):
     f_w, r_w, m, Iz, throttle, delta = coef
 
     global counter 
+    print(counter)
     counter = counter + 1
 
     f_w.update(throttle[counter], delta[counter], psip)
@@ -158,5 +160,6 @@ def vectorfield(w, t, coef):
          (Fyf + Fyr)/m + psip*xp,
          psip,
          (lf*Fyf - lr*Fyr)*Iz]
+    print(f)
     return f
     

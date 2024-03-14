@@ -41,6 +41,7 @@ throttle = 0.0
 t = [stoptime * float(i) / (numpoints - 1) for i in range(numpoints)]
 throttle = model.np.ones(len(t))
 delta = model.np.zeros(len(t))
+delta[round(len(t)/2):round(len(t)/2+len(t)/4)] = 20
 
 # Pack up the parameters and initial conditions:
 p = [max_steer_angle, m, Iz, lf, lr, Lw, r, mi, C_tau, C_alpha, Fz, min_v, throttle2omega]
