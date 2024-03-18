@@ -140,8 +140,9 @@ def vectorfield(w, t, coef):
     f_w, r_w, m, Iz, throttle, delta = coef
 
     global counter 
-    print(counter)
     counter = counter + 1
+    print(counter)
+    #print(type(counter))
 
     f_w.update(throttle[counter], delta[counter], psip)
     r_w.update(throttle[counter], 0.0, psip)    
@@ -153,13 +154,15 @@ def vectorfield(w, t, coef):
     lf = f_w.lf
     lr = r_w.lr
 
+   
+
     # Create f = (x',xp',y',yp',psi',psip'):
     f = [xp,
          (Fxf + Fxr)/m + psip*yp,
          yp,
-         (Fyf + Fyr)/m + psip*xp,
+         (Fyf + Fyr)/m - psip*xp,
          psip,
-         (lf*Fyf - lr*Fyr)*Iz]
+         (lf*Fyf - lr*Fyr)/Iz]
     print(f)
     return f
     
