@@ -9,8 +9,10 @@ lr = 0.05
 Lw = 0.0
 r = 0.024
 mi = 0.57
-C_tau = 0.2
-C_alpha = 0.2
+#C_tau = 0.2
+#C_alpha = 0.2
+C_tau = 5000
+C_alpha = 4000
 Fz = m*9.98/4
 min_v = 0.1
 throttle2omega = 1
@@ -38,7 +40,8 @@ throttle = 0.0
 # Create the time samples for the output of the ODE solver.
 # I use a large number of points, only because I want to make
 # a plot of the solution that looks nice.
-t = [stoptime * float(i) / (numpoints - 1) for i in range(numpoints)]
+t = [stoptime * int(i) / (numpoints - 1) for i in range(numpoints)]
+
 throttle = model.np.ones(len(t))
 delta = model.np.zeros(len(t))
 delta[round(len(t)/2):round(len(t)/2+len(t)/4)] = 20
