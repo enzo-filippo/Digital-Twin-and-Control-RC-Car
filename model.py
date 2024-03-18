@@ -157,7 +157,7 @@ def vectorfield(w, t, coef):
     f = [xp,
          (Fxf + Fxr)/m + psip*yp,
          yp,
-         (Fyf + Fyr)/m + psip*xp,
+         (Fyf + Fyr)/m - psip*xp,
          psip,
          (lf*Fyf - lr*Fyr)*Iz]
     print(f)
