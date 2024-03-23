@@ -196,12 +196,15 @@ def throttle(t):
     return 255
 
 def delta(t):
-    angulo = 90
+    angulo = 20
     multiplicador = 1/360
-    t0 = 2.5
-    x1 = t - t0
+    t1 = 2.5
+    x1 = t - t1
+    t2 = 5
+    x2 = t - t2
+
     # valor = (np.sin(2*np.pi*(1/10)*(t-t0)) +1)
-    valor_rad = np.heaviside(x1,1)
+    valor_rad = np.heaviside(x1,1) - np.heaviside(x2,1)
     valor_deg = multiplicador*angulo*valor_rad
     return valor_deg
 
