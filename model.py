@@ -175,11 +175,11 @@ class wheel():
         return valor
 
     def delta(self,t):
-        angulo = 20
+        angulo = 30
         multiplicador = 1/360
         t1 = 2.5
         x1 = t - t1
-        t2 = 5
+        t2 = 15
         x2 = t - t2
 
         valor_rad = np.heaviside(x1,1) - np.heaviside(x2,1)

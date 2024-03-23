@@ -3,7 +3,7 @@ import model
 # ODE Solver parameters
 abserr = 1.0e-8
 relerr = 1.0e-6
-stoptime = 10
+stoptime = 20
 numpoints = 1000
 t = model.np.linspace(0,stoptime,numpoints)
 ode_param = [abserr, relerr, stoptime, numpoints]
