@@ -19,7 +19,7 @@ alpha_0 = 0.0
 # ODE Solver parameters
 abserr = 1.0e-8
 relerr = 1.0e-6
-stoptime = 10
+stoptime = 15
 numpoints = 1000
 
 # Initial conditions

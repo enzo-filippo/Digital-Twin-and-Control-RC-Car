@@ -108,14 +108,14 @@ class NonLinearBycicle():
         plot(t, delta(t), 'k', linewidth=lw)
         savefig('delta.png', dpi=100)
         
-        # figure(5, figsize=(6, 4.5))
-        # xlabel('t')
-        # ylabel('throttle')
-        # grid(True)
-        # lw = 1
-        # axis('equal')
-        # plot(t, throttle(t), 'k', linewidth=lw)
-        # savefig('throttle.png', dpi=100)
+        figure(5, figsize=(6, 4.5))
+        xlabel('t')
+        ylabel('throttle')
+        grid(True)
+        lw = 1
+        axis('equal')
+        plot(t, throttle(t), 'k', linewidth=lw)
+        savefig('throttle.png', dpi=100)
 
         figure(6, figsize=(6, 4.5))
         xlabel('t')
@@ -193,7 +193,7 @@ class wheel():
         #print(self.name,"Fx, Fy: ", self.Fx, self.Fy)
 
 def throttle(t):
-    return 255
+    return t - t + 255
 
 def delta(t):
     angulo = 20
