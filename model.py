@@ -111,10 +111,18 @@ class NonLinearBycicle():
         
         figure(6, figsize=(6, 4.5))
         xlabel('t')
-        ylabel('throttle')
+        ylabel('throttle f')
         grid(True)
         lw = 1
         plot(t, self.f_w.throttle(t), 'k', linewidth=lw)
+        savefig(os.path.join('results',self.name,'throttle.pdf'), dpi=100)
+
+        figure(7, figsize=(6, 4.5))
+        xlabel('t')
+        ylabel('throttle r')
+        grid(True)
+        lw = 1
+        plot(t, self.r_w.throttle(t), 'k', linewidth=lw)
         savefig(os.path.join('results',self.name,'throttle.pdf'), dpi=100)
 
         show()
@@ -171,8 +179,11 @@ class wheel():
         self.Fy = Fxp*np.sin(delta) + Fyp*np.cos(delta)
 
     def throttle(self,t):
-        valor = t*0 + 255
-        return valor
+        if(self.lr != 0):
+            valor = 1
+        elif(self.lf != 0):
+            valor = 255
+        return t*0 + valor
 
     def delta(self,t):
         angulo = 30

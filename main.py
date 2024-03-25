@@ -3,7 +3,7 @@ import model
 # ODE Solver parameters
 abserr = 1.0e-8
 relerr = 1.0e-6
-stoptime = 20
+stoptime = 100
 numpoints = 1000
 t = model.np.linspace(0,stoptime,numpoints)
 ode_param = [abserr, relerr, stoptime, numpoints]
@@ -16,12 +16,12 @@ lf = 0.047
 lr = 0.05
 Lw = 0.0
 r = 0.024
-mi = 1
+mi = 0.57
 C_s = 0.9
 C_alpha = 0.9
 Fz = m*9.98/4
 min_v = 0.1
-throttle2omega = (1/255)*10
+throttle2omega = (1/255)*20
 param = [max_steer_angle, m, Iz, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, min_v, throttle2omega]
 
 # Initial conditions
