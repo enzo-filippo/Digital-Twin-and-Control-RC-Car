@@ -40,7 +40,7 @@ lines = {'cg': ax.plot([], [], 'bo', color='blue', label='CG')[0],
 time_legend = ax.text(0.02, 0.98, '', transform=ax.transAxes, va='top', ha='left')
 
 # Create the animation
-ani = FuncAnimation(fig, animate, frames=len(t), init_func=init, blit=True, interval = 100)
+ani = FuncAnimation(fig, animate, frames=len(t), init_func=init, blit=True)
 ax.legend()
 
 # ani.save(os.path.join('results','curva_t_255_d_20','anim.mp4'), fps=30, extra_args=['-vcodec', 'libx264'])  

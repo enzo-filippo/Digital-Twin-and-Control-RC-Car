@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.integrate import odeint
-from pylab import show, figure, plot, xlabel, ylabel, grid, legend, title, savefig, axis
-from matplotlib.font_manager import FontProperties
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 import os
 
 # non-linear lateral bicycle model
@@ -65,67 +65,119 @@ class NonLinearBycicle():
     def plot(self):
         t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = np.loadtxt(os.path.join('results',self.name,'sim.dat'), unpack=True)
 
-        figure(1, figsize=(6, 4.5))
-        xlabel('t')
-        ylabel('x')
-        grid(True)
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel('t')
+        plt.ylabel('x')
+        plt.grid(True)
         lw = 1
         # axis('equal')
-        plot(t, x, 'b', linewidth=lw)
-        savefig(os.path.join('results',self.name,'simx.pdf'), dpi=100)
+        plt.plot(t, x, 'b', linewidth=lw)
+        plt.savefig(os.path.join('results',self.name,'simx.pdf'), dpi=100)
         
-        figure(2, figsize=(6, 4.5))
-        xlabel('t')
-        ylabel('y')
-        grid(True)
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel('t')
+        plt.ylabel('y')
+        plt.grid(True)
         lw = 1
         # axis('equal')
-        plot(t, y, 'r', linewidth=lw)
-        savefig(os.path.join('results',self.name,'simy.pdf'), dpi=100)
+        plt.plot(t, y, 'r', linewidth=lw)
+        plt.savefig(os.path.join('results',self.name,'simy.pdf'), dpi=100)
         
-        figure(3, figsize=(6, 4.5))
-        xlabel('Xe')
-        ylabel('Ye')
-        grid(True)
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel('Xe')
+        plt.ylabel('Ye')
+        plt.grid(True)
         lw = 1
-        axis('equal')
-        plot(Xe, Ye, 'k', linewidth=lw)
-        savefig(os.path.join('results',self.name,'sim.pdf'), dpi=100)
+        plt.axis('equal')
+        plt.plot(Xe, Ye, 'k', linewidth=lw)
+        plt.savefig(os.path.join('results',self.name,'sim.pdf'), dpi=100)
 
-        figure(4, figsize=(6, 4.5))
-        xlabel('t')
-        ylabel('psi')
-        grid(True)
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel('t')
+        plt.ylabel('psi')
+        plt.grid(True)
         lw = 1
-        axis('equal')
-        plot(t, psi, 'k', linewidth=lw)
-        savefig(os.path.join('results',self.name,'psi.pdf'), dpi=100)
+        plt.axis('equal')
+        plt.plot(t, psi, 'k', linewidth=lw)
+        plt.savefig(os.path.join('results',self.name,'psi.pdf'), dpi=100)
 
-        figure(5, figsize=(6, 4.5))
-        xlabel('t')
-        ylabel('delta')
-        grid(True)
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel('t')
+        plt.ylabel('delta f')
+        plt.grid(True)
         lw = 1
-        plot(t, self.f_w.delta(t), 'k', linewidth=lw)
-        savefig(os.path.join('results',self.name,'delta.pdf'), dpi=100)
+        plt.plot(t, self.f_w.delta(t), 'k', linewidth=lw)
+        plt.savefig(os.path.join('results',self.name,'delta.pdf'), dpi=100)
+
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel('t')
+        plt.ylabel('delta r')
+        plt.grid(True)
+        lw = 1
+        plt.plot(t, self.r_w.delta(t), 'k', linewidth=lw)
+        plt.savefig(os.path.join('results',self.name,'delta.pdf'), dpi=100)
+
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel('t')
+        plt.ylabel('throttle f')
+        plt.grid(True)
+        lw = 1
+        plt.plot(t, self.f_w.throttle(t), 'k', linewidth=lw)
+        plt.savefig(os.path.join('results',self.name,'throttle.pdf'), dpi=100)
+
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel('t')
+        plt.ylabel('throttle r')
+        plt.grid(True)
+        lw = 1
+        plt.plot(t, self.r_w.throttle(t), 'k', linewidth=lw)
+        plt.savefig(os.path.join('results',self.name,'throttle.pdf'), dpi=100)
+
+        plt.show()
+
+    def anim(self, anim_fps):
+        def read_file(filename):
+            data = np.loadtxt(filename)
+            return data[:, 0], data[:, 7], data[:, 8], data[:, 9], data[:, 10], data[:, 11], data[:, 12]
+
+        def init():
+            lines['cg'].set_data([], [])
+            lines['fw'].set_data([], [])
+            lines['rw'].set_data([], [])
+            return lines.values()
+
+        def animate(i):
+            lines['cg'].set_data(x[i], y[i])
+            lines['fw'].set_data(xef[i], yef[i])
+            lines['rw'].set_data(xer[i], yer[i])
+            lines['cgrastro'].set_data(x[:i], y[:i])
+            lines['fwrastro'].set_data(xef[:i], yef[:i])
+            lines['rwrastro'].set_data(xer[:i], yer[:i])
+            time_legend.set_text('Time: {:.2f}'.format(t[i]))
+            return (*lines.values(), time_legend)
+
+        t, x, y, xef, yef, xer, yer = read_file(os.path.join('results',self.name,'sim.dat'))
+
+        fig, ax = plt.subplots()
+        ax.set_xlim(np.min(np.concatenate((x,y)))-0.1, np.max(np.concatenate((x,y)))+0.1)  # Adjust x-axis limits as needed
+        ax.set_ylim(np.min(np.concatenate((x,y)))-0.1, np.max(np.concatenate((x,y)))+0.1)  # Adjust y-axis limits as needed
+        ax.set_aspect('equal')
+        lines = {'cg': ax.plot([], [], 'bo', color='blue', label='CG')[0],
+                'fw': ax.plot([], [], 'ro', color='red', label='FW')[0],
+                'rw': ax.plot([], [], 'go', color='green', label='RW')[0],
+                'cgrastro': ax.plot([], [], 'b-', color='blue', label='CG')[0],
+                'fwrastro': ax.plot([], [], 'r:', color='red')[0],
+                'rwrastro': ax.plot([], [], 'g:', color='green')[0]}
+        time_legend = ax.text(0.02, 0.98, '', transform=ax.transAxes, va='top', ha='left')
+
+        # Create the animation
+        ani = FuncAnimation(fig, animate, frames=len(t), init_func=init, blit=True, interval = anim_fps)
+        ax.legend()
+
+        # ani.save(os.path.join('results','curva_t_255_d_20','anim.mp4'), fps=30, extra_args=['-vcodec', 'libx264'])  
+        plt.show()
+
         
-        figure(6, figsize=(6, 4.5))
-        xlabel('t')
-        ylabel('throttle f')
-        grid(True)
-        lw = 1
-        plot(t, self.f_w.throttle(t), 'k', linewidth=lw)
-        savefig(os.path.join('results',self.name,'throttle.pdf'), dpi=100)
-
-        figure(7, figsize=(6, 4.5))
-        xlabel('t')
-        ylabel('throttle r')
-        grid(True)
-        lw = 1
-        plot(t, self.r_w.throttle(t), 'k', linewidth=lw)
-        savefig(os.path.join('results',self.name,'throttle.pdf'), dpi=100)
-
-        show()
 
 class wheel():
     def __init__(self, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega):
@@ -180,21 +232,24 @@ class wheel():
 
     def throttle(self,t):
         if(self.lr != 0):
-            valor = 1
+            valor = 255
         elif(self.lf != 0):
             valor = 255
+        valor = 255
         return t*0 + valor
 
     def delta(self,t):
-        angulo = 30
-        multiplicador = 1/360
-        t1 = 2.5
-        x1 = t - t1
-        t2 = 15
-        x2 = t - t2
+        if(self.lr != 0):
+            valor_deg = 0
+        elif(self.lf != 0):
+            angulo = np.radians(30)
+            t1 = 0.5
+            x1 = t - t1
+            t2 = 4
+            x2 = t - t2
 
-        valor_rad = np.heaviside(x1,1) - np.heaviside(x2,1)
-        valor_deg = multiplicador*angulo*valor_rad
+            funcao = np.heaviside(x1,1) - np.heaviside(x2,1)
+            valor_deg = angulo*funcao
         return t*0 + valor_deg
 
 def vectorfield(w, t, coef):

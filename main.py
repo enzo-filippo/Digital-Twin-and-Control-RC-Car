@@ -3,8 +3,9 @@ import model
 # ODE Solver parameters
 abserr = 1.0e-8
 relerr = 1.0e-6
-stoptime = 100
+stoptime = 20
 numpoints = 1000
+step = numpoints/stoptime
 t = model.np.linspace(0,stoptime,numpoints)
 ode_param = [abserr, relerr, stoptime, numpoints]
 
@@ -41,4 +42,4 @@ val_0 = [x0, y0, psi0, xp0, xpp0, yp0, ypp0, psip0, psipp0, Xep0, Yep0, var_delt
 
 voiture = model.NonLinearBycicle("curva_t_255_d_20", param, val_0)
 voiture.run(t, ode_param)
-voiture.plot()
+voiture.anim(step)
