@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import os
 
-rastro = 50
+# rastro = 
 
 def read_file(filename):
     data = np.loadtxt(filename)
@@ -20,9 +20,10 @@ def animate(i):
     lines['fw'].set_data(xef[i], yef[i])
     lines['rw'].set_data(xer[i], yer[i])
     lines['cgrastro'].set_data(x[:i], y[:i])
-    lines['fwrastro'].set_data(xef[i-rastro:i], yef[i-rastro:i])
-    lines['rwrastro'].set_data(xer[i-rastro:i], yer[i-rastro:i])
-    return lines.values()
+    lines['fwrastro'].set_data(xef[:i], yef[:i])
+    lines['rwrastro'].set_data(xer[:i], yer[:i])
+    time_legend.set_text('Time: {:.2f}'.format(t[i]))
+    return (*lines.values(), time_legend)
 
 t, x, y, xef, yef, xer, yer = read_file(os.path.join('results','curva_t_255_d_20','sim.dat'))
 
@@ -36,10 +37,11 @@ lines = {'cg': ax.plot([], [], 'bo', color='blue', label='CG')[0],
          'cgrastro': ax.plot([], [], 'b-', color='blue', label='CG')[0],
          'fwrastro': ax.plot([], [], 'r:', color='red')[0],
          'rwrastro': ax.plot([], [], 'g:', color='green')[0]}
+time_legend = ax.text(0.02, 0.98, '', transform=ax.transAxes, va='top', ha='left')
 
 # Create the animation
-ani = FuncAnimation(fig, animate, frames=len(t), init_func=init, blit=True, interval = 10)
+ani = FuncAnimation(fig, animate, frames=len(t), init_func=init, blit=True, interval = 100)
 ax.legend()
 
-ani.save(os.path.join('results','curva_t_255_d_20','anim.mp4'), fps=30, extra_args=['-vcodec', 'libx264'])
+# ani.save(os.path.join('results','curva_t_255_d_20','anim.mp4'), fps=30, extra_args=['-vcodec', 'libx264'])  
 plt.show()
