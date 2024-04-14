@@ -21,6 +21,7 @@ class NonLinearBycicle():
         self.Fz = parameters[10]
         self.min_v = parameters[11]
         self.throttle2omega = parameters[12]
+        self.throttlereal = parameters[13]
 
         self.x = val_0[0]
         self.y = val_0[1]
@@ -31,12 +32,12 @@ class NonLinearBycicle():
         self.x_pp = val_0[6]
         self.y_pp = val_0[7]
         self.psi_pp = val_0[8]
-        self.Xe_p = val_0[9]
-        self.Ye_p = val_0[10]
+        self.Xe = val_0[9]
+        self.Ye = val_0[10]
         self.delta_p = val_0[11]
 
-        self.f_w = wheel(self.lf, 0.0, self.mi, self.r, self.mi, self.C_s, self.C_alpha, self.Fz, self.throttle2omega)
-        self.r_w = wheel(0.0, self.lr, self.mi, self.r, self.mi, self.C_s, self.C_alpha, self.Fz, self.throttle2omega)
+        self.f_w = wheel(self.lf, 0.0, self.mi, self.r, self.mi, self.C_s, self.C_alpha, self.Fz, self.throttle2omega, self.throttlereal)
+        self.r_w = wheel(0.0, self.lr, self.mi, self.r, self.mi, self.C_s, self.C_alpha, self.Fz, self.throttle2omega, self.throttlereal)
 
         if not os.path.exists('results'):
             os.makedirs('results')
@@ -47,7 +48,7 @@ class NonLinearBycicle():
         abserr, relerr, _, _ = ode_p
 
         coef = [self.f_w, self.r_w, self.m, self.Iz]
-        val_0 = [self.x_p, self.x_pp, self.y_p, self.y_pp, self.psi_p, self.psi_pp, self.Xe_p, self.Ye_p]
+        val_0 = [self.x, self.x_p, self.y, self.y_p, self.psi, self.psi_p, self.Xe, self.Ye]
 
         # Call the ODE solver.
         wsol = odeint(vectorfield, val_0, t, args=(coef,),atol=abserr, rtol=relerr)
@@ -56,11 +57,14 @@ class NonLinearBycicle():
         self.f_w.Ye = wsol[:,7] + self.f_w.lf*np.sin(wsol[:,4])
         self.r_w.Xe = wsol[:,6] - self.r_w.lr*np.cos(wsol[:,4])
         self.r_w.Ye = wsol[:,7] - self.r_w.lr*np.sin(wsol[:,4])
+        
 
 
         with open(os.path.join('results',self.name,'sim.dat'), 'w') as f:
             for t1, w1, xef, yef, xer, yer in zip(t, wsol, self.f_w.Xe, self.f_w.Ye, self.r_w.Xe, self.r_w.Ye):
                 print(t1, w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], w1[7], xef, yef, xer, yer, file=f)
+        
+        return wsol[:,6], wsol[:,7]
 
     def plot(self):
         t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = np.loadtxt(os.path.join('results',self.name,'sim.dat'), unpack=True)
@@ -133,6 +137,16 @@ class NonLinearBycicle():
         plt.plot(t, self.r_w.throttle(t), 'k', linewidth=lw)
         plt.savefig(os.path.join('results',self.name,'throttle.pdf'), dpi=100)
 
+
+        self.velocidade = np.sqrt((xp**2 + yp**2))
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel('t')
+        plt.ylabel('vitesse')
+        plt.grid(True)
+        lw = 1
+        plt.plot(t, self.velocidade, 'k', linewidth=lw)
+        plt.savefig(os.path.join('results',self.name,'vitesse.pdf'), dpi=100)
+
         plt.show()
 
     def anim(self, anim_fps):
@@ -180,7 +194,7 @@ class NonLinearBycicle():
         
 
 class wheel():
-    def __init__(self, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega):
+    def __init__(self, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega, throttle):
         self.lf = lf
         self.lr = lr
         self.Lw = Lw
@@ -190,6 +204,7 @@ class wheel():
         self.C_alpha = C_alpha
         self.Fz = Fz
         self.throttle2omega = throttle2omega
+        self.throttlereal = throttle
         if self.lf == 0:
             self.name = "r_w"
         if self.lr == 0:
@@ -231,25 +246,21 @@ class wheel():
         self.Fy = Fxp*np.sin(delta) + Fyp*np.cos(delta)
 
     def throttle(self,t):
-        if(self.lr != 0):
-            valor = 255
-        elif(self.lf != 0):
-            valor = 255
-        valor = 255
-        return t*0 + valor
+        return t*0 + self.throttlereal
 
     def delta(self,t):
-        if(self.lr != 0):
-            valor_deg = 0
-        elif(self.lf != 0):
-            angulo = np.radians(30)
-            t1 = 0.5
-            x1 = t - t1
-            t2 = 4
-            x2 = t - t2
+        # if(self.lr != 0):
+            # valor_deg = 0
+        # elif(self.lf != 0):
+            # angulo = np.radians(10)
+            # t1 = 0.5
+            # x1 = t - t1
+            # t2 = 4
+            # x2 = t - t2
 
-            funcao = np.heaviside(x1,1) - np.heaviside(x2,1)
-            valor_deg = angulo*funcao
+            # funcao = np.heaviside(x1,1) - np.heaviside(x2,1)
+            # valor_deg = angulo*funcao
+        valor_deg = 0
         return t*0 + valor_deg
 
 def vectorfield(w, t, coef):
