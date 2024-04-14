@@ -1,10 +1,11 @@
 import model
 import real_data
+import numpy as np
 
 # ODE Solver parameters
 abserr = 1.0e-8
 relerr = 1.0e-6
-starttime = 5
+starttime = 4.8
 stoptime = 7.9-starttime
 numpoints = 81
 step = numpoints/stoptime
@@ -45,11 +46,26 @@ var_delta = 0.0
 val_0 = [x0, y0, psi0, xp0, xpp0, yp0, ypp0, psip0, psipp0, Xe0, Ye0, var_delta]
 
 voiture = model.NonLinearBycicle("curva_t_255_d_20", param, val_0)
-x, y = voiture.run(t, ode_param)
-voiture.plot()
+x, y, xp, yp  = voiture.run(t, ode_param)
+# voiture.plot()
+v = np.sqrt((xp**2 + yp**2))
 # voiture.anim(step)
 
+
+# Example usage
+
+def find_closest_value_position(arr, value):
+    absolute_diff = np.abs(arr - value)
+    closest_index = np.argmin(absolute_diff)
+    return closest_index
+
 treal, xreal, yreal, vreal, areal = real_data.run(throttlereal)
+t_initial_real = treal[-1]- t[-1]
+
+position = find_closest_value_position(treal, t_initial_real)
+#position = np.where(treal == t_initial_real)[0]
+treal += -t_initial_real
+
 real_data.plt.figure(figsize=(6, 4.5))
 real_data.plt.xlabel("y [m]")
 real_data.plt.ylabel("x [m]")
@@ -58,6 +74,19 @@ real_data.plt.axis('equal')
 lw = 1
 real_data.plt.plot(xreal, yreal,'r:', label ="real")
 real_data.plt.plot(x, y, 'b:', label ="sim")
+real_data.plt.legend()
+real_data.plt.show()
+
+
+
+
+real_data.plt.figure(figsize=(6, 4.5))
+real_data.plt.xlabel("v [m/s]")
+real_data.plt.ylabel("t [s]")
+real_data.plt.grid(True)
+real_data.plt.axis('equal')
+real_data.plt.plot(treal[int(position):], vreal[int(position):],'r:', label ="real")
+real_data.plt.plot(t, v, 'b:', label ="sim")
 real_data.plt.legend()
 real_data.plt.show()
 

@@ -64,7 +64,7 @@ class NonLinearBycicle():
             for t1, w1, xef, yef, xer, yer in zip(t, wsol, self.f_w.Xe, self.f_w.Ye, self.r_w.Xe, self.r_w.Ye):
                 print(t1, w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], w1[7], xef, yef, xer, yer, file=f)
         
-        return wsol[:,6], wsol[:,7]
+        return wsol[:,6], wsol[:,7], wsol[:,1], wsol[:,3]
 
     def plot(self):
         t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = np.loadtxt(os.path.join('results',self.name,'sim.dat'), unpack=True)
