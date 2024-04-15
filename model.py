@@ -245,7 +245,8 @@ class wheel():
         self.Fx = Fxp*np.cos(delta) - Fyp*np.sin(delta)
         self.Fy = Fxp*np.sin(delta) + Fyp*np.cos(delta)
 
-    def throttle(self,t):
+    def throttle(self,t, throttle_parameters):
+        if t < 
         return t*0 + self.throttlereal
 
     def delta(self,t):
@@ -298,4 +299,5 @@ def vectorfield(w, t, coef):
          xp*np.sin(psi)+yp*np.cos(psi)]
     
     return f
-    
+
+
