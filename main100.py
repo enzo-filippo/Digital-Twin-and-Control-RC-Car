@@ -81,8 +81,8 @@ real_data.plt.show()
 
 
 real_data.plt.figure(figsize=(6, 4.5))
-real_data.plt.xlabel("v [m/s]")
-real_data.plt.ylabel("t [s]")
+real_data.plt.xlabel("t [s]")
+real_data.plt.ylabel("v [m/s]")
 real_data.plt.grid(True)
 real_data.plt.axis('equal')
 real_data.plt.plot(treal[int(position):], vreal[int(position):],'r:', label ="real")
