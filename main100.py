@@ -60,7 +60,7 @@ def find_closest_value_position(arr, value):
     return closest_index
 
 treal, xreal, yreal, vreal, areal = real_data.run(throttlereal)
-t_initial_real = treal[-1]- t[-1]
+t_initial_real = treal[-1] - t[-1]
 
 position = find_closest_value_position(treal, t_initial_real)
 #position = np.where(treal == t_initial_real)[0]
