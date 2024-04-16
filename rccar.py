@@ -294,9 +294,11 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
 def difference(sim_position, real_position):
     size = len(sim_position)
     absolute_diff = np.zeros(size)
+    sum = 0
     for i in range(size):
         absolute_diff[i] = sim_position[i] - real_position[i]
-    return absolute_diff
+        sum += absolute_diff[i]
+    return abs(absolute_diff), abs(sum)
 
 def plot(x,y, labelx, labely):
     plt.xlabel(labelx)
@@ -308,9 +310,11 @@ def plot(x,y, labelx, labely):
 
 def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu):
     vsimu = np.sqrt((xpsimu**2 + ypsimu**2))
-    x_dif = difference(xsimu,xreal)
-    y_dif = difference(ysimu,yreal)
-    v_dif = difference(vsimu,vreal)
+    x_dif, _ = difference(xsimu,xreal)
+    y_dif, _ = difference(ysimu,yreal)
+    v_dif, _ = difference(vsimu,vreal)
+
+
     
     plt.figure(figsize=(6, 4.5))
     plt.xlabel("y [m]")
