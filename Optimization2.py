@@ -67,8 +67,8 @@ voiture.run(tsim, ode_param)
 
 tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
 
-C_mu_vector = rccar.np.linspace(0.5, 1, 100)
-C_s_vector = rccar.np.linspace(0, 1, 100)
+C_mu_vector = rccar.np.linspace(0.5, 1, 10)
+C_s_vector = rccar.np.linspace(0, 1, 10)
 
 min_x = 10000
 min_y = 10000

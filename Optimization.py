@@ -12,7 +12,7 @@ initial_time = 3
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
-mi = 0.57
+mi = 0.59
 C_s = 0.3
 C_alpha = 0.9
 
@@ -72,25 +72,44 @@ C_s_vector = rccar.np.linspace(0, 1, 100)
 sum_x = rccar.np.zeros(len(C_s_vector))
 sum_y = rccar.np.zeros(len(C_s_vector))
 sum_v = rccar.np.zeros(len(C_s_vector))
+min_v = 10000
+min_x = 10000
+min_y = 10000
+
 for i in range(len(C_s_vector)):
     
     param = [max_steer_angle, m, Iz, lf, lr, Lw, r, mi, C_s_vector[i], C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters]
     voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
     voiture.run(tsim, ode_param)
     tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
-    
+
+    # _, min_x_iterado = rccar.difference(Xe, xreal)
+    # if min_x > min_x_iterado:
+    #     min_x = min_x_iterado
+    #     min_x_i = i
+    # _, min_y_iterado = rccar.difference(Ye, yreal)
+    # if min_y > min_y_iterado:
+    #     min_y = min_y_iterado
+    #     min_y_i = i
+    # _, min_v_iterado = rccar.difference(rccar.np.sqrt(xpsimu[:-2]**2+ypsimu[:-2]**2), vreal[1:])
+    # if min_v > min_v_iterado:
+    #     min_v = min_v_iterado
+    #     min_v_i = i 
     _, sum_x[i] = rccar.difference(Xe, xreal)
     _, sum_y[i] = rccar.difference(Ye, yreal)
-    _, sum_v[i] = rccar.difference(rccar.np.sqrt(xpsimu**2+ypsimu**2), vreal)
+    _, sum_v[i] = rccar.difference(rccar.np.sqrt(xpsimu**2+ypsimu**2)[:-2], vreal[1:])
 
 C_s_erro_x_min = C_s_vector[rccar.np.argmin(abs(sum_x))] # Try to catch the minimal error - varying C_s
 C_s_erro_y_min = C_s_vector[rccar.np.argmin(abs(sum_y))]
 C_s_erro_v_min = C_s_vector[rccar.np.argmin(abs(sum_v))]
 
-print(C_s_vector)
-print(C_s_erro_x_min)
-print(C_s_erro_y_min)
-print(C_s_erro_v_min)
+# C_s_erro_x_min = C_s_vector[min_x_i]
+# C_s_erro_y_min = C_s_vector[min_y_i]
+# C_s_erro_v_min = C_s_vector[min_v_i]
+
+print("Optimizated C_s for x_diff: ",C_s_erro_x_min)
+print("Optimizated C_s for y_diff: ",C_s_erro_y_min)
+print("Optimizated C_s for v_diff: ",C_s_erro_v_min)
 
 # PLOTS
 # rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu)

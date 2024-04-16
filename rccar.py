@@ -312,7 +312,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     vsimu = np.sqrt((xpsimu**2 + ypsimu**2))
     x_dif, _ = difference(xsimu,xreal)
     y_dif, _ = difference(ysimu,yreal)
-    v_dif, _ = difference(vsimu,vreal)
+    v_dif, _ = difference(vsimu[:-2],vreal[1:])
 
     name_figures = exp_name_file.replace(".txt","")
 
@@ -379,7 +379,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.grid(True)
     plt.axis('equal')
     plt.title(" Speed error (between simu and real) ")
-    plt.plot(treal, v_dif, 'b:', label ="erreur de vitesse")
+    plt.plot(treal[2:], v_dif, 'b:', label ="erreur de vitesse")
     plt.legend()
     plt.savefig('figures/'+name_figures+'_Error_Speed.pdf')
     plt.show()
