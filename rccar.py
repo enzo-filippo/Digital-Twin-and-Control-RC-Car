@@ -240,11 +240,16 @@ def anim(sim_file_directory, anim_fps):
 
 def read_sim_file(sim_file_directory):
     t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = np.loadtxt(os.path.join('results',sim_file_directory,'sim.dat'), unpack=True)
-    return t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer 
+    return t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer
+
+def find_closest_value_position(arr, value):
+    absolute_diff = np.abs(arr - value)
+    closest_index = np.argmin(absolute_diff)
+    return closest_index
 
 def read_exp_file(exp_file_directory, file_name, initial_time):
     data = {}
-    with open(os.path.join('results',exp_file_directory, file_name), 'r') as file:
+    with open(os.path.join(exp_file_directory, file_name), 'r') as file:
         for line in file:
             if line.strip():  # Ignora linhas em branco
                 key, values = line.strip().split(':')
@@ -261,11 +266,25 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
     t_max =  np.max(t)-np.min(t)
     length = len(x)
 
+    treal = t
+    step = 0.1
+    stoptime = treal[-1]-initial_time
+    numpoints = int(stoptime/step)+1
+    tsim = np.linspace(0,stoptime,numpoints)
+
+    position = find_closest_value_position(treal, initial_time)
+    t_initial_real = treal[-1] - tsim[-1]
+    treal += -t_initial_real
+    treal = treal[position:]
+    xreal = x[position+1:]
+    yreal = y[position+1:]
+    vreal = v[position:]
+    areal = a[position-1:]
 
     #colocar modificacoes aqui
-    t0 = t[0]
-    x0 = x[0]
-    y0 = y[0]
-    v0 = v[0]
-    a0 = a[0]
-    return t, x, y, v, a, t_max, length, t0, x0, y0, v0, a0
+    t0 = treal[0]
+    x0 = xreal[0]
+    y0 = yreal[0]
+    v0 = vreal[0]
+    a0 = areal[0]
+    return treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, x0, y0, v0, a0

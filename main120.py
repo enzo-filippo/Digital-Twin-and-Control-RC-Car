@@ -3,15 +3,20 @@ import real_data
 
 
 sim_file_directory = "curva_t_255_d_20"
-exp_file_directory = ""
+exp_file_directory = "data"
+exp_file_name = "120.txt"
 
-# ODE Solver parameters
+# ODE Solver parameters - INPUTS FOR EVERY ANALYSIS
 abserr = 1.0e-8
 relerr = 1.0e-6
-starttime = 3
-stoptime = 12.8-starttime
-numpoints = 130
-step = numpoints/stoptime
+initial_time = 3
+
+# Getting the real data value and the time date to make the simulation
+treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, x0, y0, v0, a0 = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
+
+#stoptime = 12.8-starttime
+#numpoints = 130
+#step = numpoints/stoptime
 
 # Parameter values
 max_steer_angle = 30.0
@@ -38,8 +43,8 @@ final_time_delta = stoptime
 delta_type = "straight"
 
 # Initial conditions
-x0 = 0.0
-y0 = 0.0
+#x0 = 0.0 # real values that comes from the experimental
+#y0 = 0.0 # real values that comes from the experimental
 psi0 = -5.187103785879343
 xp0 = 0.0
 xpp0 = 0.0
@@ -53,17 +58,17 @@ var_delta = 0.0
 val_0 = [x0, y0, psi0, xp0, xpp0, yp0, ypp0, psip0, psipp0, Xe0, Ye0, var_delta]
 
 # Packaging the parameters
-t = rccar.np.linspace(0,stoptime,numpoints)
+#t = rccar.np.linspace(0,stoptime,numpoints)
 ode_param = [abserr, relerr, stoptime, numpoints]
 throttle_sim = -(throttle_real_command - 127)
 throttle_parameters = rccar.set_throttle(throttle_sim, initial_time_throttle, final_time_throttle, throttle_type)
 delta_parameters = rccar.set_throttle(delta_real_command, initial_time_delta, final_time_delta, delta_type)
 param = [max_steer_angle, m, Iz, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters]
 voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
-voiture.run(t, ode_param)
+voiture.run(tsim, ode_param)
 t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
 
-treal, xreal, yreal, vreal, areal = real_data.run(throttle_real_command)
+
 real_data.plt.figure(figsize=(6, 4.5))
 real_data.plt.xlabel("y [m]")
 real_data.plt.ylabel("x [m]")
