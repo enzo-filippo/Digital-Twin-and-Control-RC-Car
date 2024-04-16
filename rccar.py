@@ -308,12 +308,13 @@ def plot(x,y, labelx, labely):
     lw = 1
     plt.plot(x, y, 'b', linewidth=lw)
 
-def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu):
+def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu, exp_name_file):
     vsimu = np.sqrt((xpsimu**2 + ypsimu**2))
     x_dif, _ = difference(xsimu,xreal)
     y_dif, _ = difference(ysimu,yreal)
     v_dif, _ = difference(vsimu,vreal)
 
+    name_figures = exp_name_file.replace(".txt","")
 
     
     plt.figure(figsize=(6, 4.5))
@@ -322,9 +323,10 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.grid(True)
     plt.axis('equal')
     plt.title(" Position (comparison of curves two axis) ")
-    plt.plot(xreal, yreal,'r:', label ="real")
-    plt.plot(xsimu, ysimu, 'b:', label ="sim")
+    plt.plot(xreal, yreal,'r:', label ="réel")
+    plt.plot(xsimu, ysimu, 'b:', label ="simulation")
     plt.legend()
+    plt.savefig('figures/'+name_figures+'_Comparison_X_and_Y_axis.pdf')
 
 
     plt.figure(figsize=(6, 4.5))
@@ -333,9 +335,10 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.grid(True)
     plt.axis('equal')
     plt.title(" Position (comparison of curves - X axis) ")
-    plt.plot(treal, xreal,'r:', label ="real")
-    plt.plot(tsimu, xsimu, 'b:', label ="sim")
+    plt.plot(treal, xreal,'r:', label ="réel")
+    plt.plot(tsimu, xsimu, 'b:', label ="simulation")
     plt.legend()
+    plt.savefig('figures/'+name_figures+'_Comparison_X_axis.pdf')
 
     plt.figure(figsize=(6, 4.5))
     plt.xlabel("t [s]")
@@ -343,9 +346,10 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.grid(True)
     plt.axis('equal')
     plt.title(" Position (comparison of curves - Y axis) ")
-    plt.plot(treal, yreal,'r:', label ="real")
-    plt.plot(treal, ysimu, 'b:', label ="sim")
+    plt.plot(treal, yreal,'r:', label ="réel")
+    plt.plot(treal, ysimu, 'b:', label ="simulation")
     plt.legend()
+    plt.savefig('figures/'+name_figures+'_Comparison_Y_axis.pdf')
 
     plt.figure(figsize=(6, 4.5))
     plt.xlabel("t [s]")
@@ -353,9 +357,10 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.grid(True)
     plt.axis('equal')
     plt.title(" Postion error (between simu and real) ")
-    plt.plot(treal, x_dif,'r:', label ="x")
-    plt.plot(treal, y_dif, 'b:', label ="y")
+    plt.plot(treal, x_dif,'r:', label ="error x")
+    plt.plot(treal, y_dif, 'b:', label ="error y")
     plt.legend()
+    plt.savefig('figures/'+name_figures+'_Error_Position_X_and_Y.pdf')
 
     plt.figure(figsize=(6, 4.5))
     plt.xlabel("t [s]")
@@ -363,9 +368,10 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.grid(True)
     plt.axis('equal')
     plt.title(" Speed (comparison of curves) ")
-    plt.plot(treal, vreal,'r:', label ="real")
-    plt.plot(tsimu, vsimu, 'b:', label ="sim")
+    plt.plot(treal, vreal,'r:', label ="réel")
+    plt.plot(tsimu, vsimu, 'b:', label ="simulation")
     plt.legend()
+    plt.savefig('figures/'+name_figures+'_Comparison_Speed.pdf')
 
     plt.figure(figsize=(6, 4.5))
     plt.xlabel("t [s]")
@@ -373,6 +379,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.grid(True)
     plt.axis('equal')
     plt.title(" Speed error (between simu and real) ")
-    plt.plot(treal, v_dif, 'b:', label ="vitesse")
+    plt.plot(treal, v_dif, 'b:', label ="erreur de vitesse")
     plt.legend()
+    plt.savefig('figures/'+name_figures+'_Error_Speed.pdf')
     plt.show()
