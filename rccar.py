@@ -262,7 +262,6 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
     v = np.array(data['liste_vitesse_long_corr'])/100
     a = np.array(data['acceleration_corr'])/100
     
-    psi0 = np.degrees(np.arctan((y[-1]-y[0])/(x[-1]-x[0])))
     t_max =  np.max(t)-np.min(t)
     length = len(x)
 
