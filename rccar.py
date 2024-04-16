@@ -25,7 +25,7 @@ class NonLinearBycicle():
 
         self.x = val_0[0]
         self.y = val_0[1]
-        self.psi = np.radians(val_0[2]+180)
+        self.psi = val_0[2]
         self.x_p = val_0[3]
         self.y_p = val_0[4]
         self.psi_p = val_0[5]
@@ -217,6 +217,7 @@ def anim(sim_file_directory, anim_fps):
             time_legend.set_text('Time: {:.2f}'.format(t[i]))
             return (*lines.values(), time_legend)
 
+
         t, x, y, xef, yef, xer, yer = read_file(os.path.join('results',sim_file_directory,'sim.dat'))
 
         fig, ax = plt.subplots()
@@ -254,7 +255,6 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
             if line.strip():  # Ignora linhas em branco
                 key, values = line.strip().split(':')
                 data[key.strip()] = list(map(float, values.split()))
-    print(type(data['abscisse']))
     t = np.array(data['abscisse'])
     pos = np.array(data['positions_barycentre_corr'])
     x = pos[:int((np.floor(len(pos)/2)))]/100
@@ -283,8 +283,93 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
 
     #colocar modificacoes aqui
     t0 = treal[0]
-    x0 = xreal[0]
-    y0 = yreal[0]
+    Xe0 = xreal[0]
+    Ye0 = yreal[0]
     v0 = vreal[0]
     a0 = areal[0]
-    return treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, x0, y0, v0, a0
+    psi0_tout_droit = np.arctan((yreal[-1] - yreal[0])/(xreal[-1]-xreal[0]))
+    print("For the Y axis we have: y0 = ", yreal[0], " and yf = ", yreal[-1])
+    print("For the X axis we have: x0 = ", xreal[0], " and xf = ", xreal[-1])
+    return treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit
+
+def difference(sim_position, real_position):
+    size = len(sim_position)
+    absolute_diff = np.zeros(size)
+    for i in range(size):
+        absolute_diff[i] = sim_position[i] - real_position[i]
+    return absolute_diff
+
+def plot(x,y, labelx, labely):
+    plt.xlabel(labelx)
+    plt.ylabel(labely)
+    plt.grid(True)
+    # axis('equal')
+    lw = 1
+    plt.plot(x, y, 'b', linewidth=lw)
+
+def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu):
+    vsimu = np.sqrt((xpsimu**2 + ypsimu**2))
+    x_dif = difference(xsimu,xreal)
+    y_dif = difference(ysimu,yreal)
+    v_dif = difference(vsimu,vreal)
+    
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("y [m]")
+    plt.ylabel("x [m]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Position (comparison of curves two axis) ")
+    plt.plot(xreal, yreal,'r:', label ="real")
+    plt.plot(xsimu, ysimu, 'b:', label ="sim")
+    plt.legend()
+
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("x [m]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Position (comparison of curves - X axis) ")
+    plt.plot(treal, xreal,'r:', label ="real")
+    plt.plot(tsimu, xsimu, 'b:', label ="sim")
+    plt.legend()
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("y [m]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Position (comparison of curves - Y axis) ")
+    plt.plot(treal, yreal,'r:', label ="real")
+    plt.plot(treal, ysimu, 'b:', label ="sim")
+    plt.legend()
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("error [m]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Postion error (between simu and real) ")
+    plt.plot(treal, x_dif,'r:', label ="x")
+    plt.plot(treal, y_dif, 'b:', label ="y")
+    plt.legend()
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("v [m/s]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Speed (comparison of curves) ")
+    plt.plot(treal, vreal,'r:', label ="real")
+    plt.plot(tsimu, vsimu, 'b:', label ="sim")
+    plt.legend()
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("error [m/s]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Speed error (between simu and real) ")
+    plt.plot(treal, v_dif, 'b:', label ="vitesse")
+    plt.legend()
+    plt.show()
