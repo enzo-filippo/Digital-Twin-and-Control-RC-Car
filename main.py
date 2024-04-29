@@ -1,10 +1,11 @@
 import rccar
-import real_data
 
+# Real data and simulation:
+throttle_real_command = 120
 
 sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
-exp_file_name = "120.txt"
+exp_file_name = str(throttle_real_command) + ".txt"
 
 # ODE Solver parameters - INPUTS FOR EVERY ANALYSIS
 abserr = 1.0e-8
@@ -30,7 +31,6 @@ Fz = m*9.98/4
 throttle2omega = 0.05166/r
 
 # Simulation conditions
-throttle_real_command = 120
 initial_time_throttle = 0
 final_time_throttle = 100
 throttle_type = "step"
