@@ -1,7 +1,7 @@
 import rccar
 
 # Real data and simulation:
-throttle_real_command = 100
+throttle_real_command = 90
 
 sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
@@ -10,13 +10,13 @@ exp_file_name = str(throttle_real_command) + ".txt"
 # ODE Solver parameters - INPUTS FOR EVERY ANALYSIS
 abserr = 1.0e-8
 relerr = 1.0e-6
-initial_time = 4.88
+initial_time = 5.35
 
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
 mi = 0.59
-C_s = 0.08
+C_s = 0.16
 C_alpha = 0.9
 
 # Fixed Parameter values
@@ -28,7 +28,7 @@ lr = 0.05
 Lw = 0.0
 r = 0.024
 Fz = m*9.98/4
-throttle2omega = 0.05666/r
+throttle2omega = 0.059/r
 # throttle2omega = 0.0595/r
 
 # Simulation conditions
@@ -71,7 +71,7 @@ voiture.run(tsim, ode_param)
 tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
 
 # PLOTS
-rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, exp_file_name)
+rccar.ComparisonPlot(treal[1:], xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, exp_file_name)
 
 
 

@@ -2,12 +2,12 @@ import rccar
 
 sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
-exp_file_name = "120.txt"
+exp_file_name = "90.txt"
 
 # ODE Solver parameters - INPUTS FOR EVERY ANALYSIS
 abserr = 1.0e-8
 relerr = 1.0e-6
-initial_time = 3
+initial_time = 5.35
 
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
@@ -25,10 +25,11 @@ lr = 0.05
 Lw = 0.0
 r = 0.024
 Fz = m*9.98/4
-throttle2omega = 0.05166/r
+throttle2omega = 0.059/r
+# throttle2omega = 0.05166/r
 
 # Simulation conditions
-throttle_real_command = 120
+throttle_real_command = 90
 initial_time_throttle = 0
 final_time_throttle = 100
 throttle_type = "step"
