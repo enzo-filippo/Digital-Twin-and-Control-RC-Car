@@ -17,11 +17,6 @@ def ler_arquivo(filename):
     y = pos[int((np.floor(len(pos)/2))):]/100
     v = np.array(data['liste_vitesse_long_corr'])/100
     a = np.array(data['acceleration_corr'])/100
-    # print(len(t))
-    # print(len(x))
-    # print(len(y))
-    # print(len(v))
-    # print(len(a))
     return t, x, y, v, a
 
 def plot(x,y, labelx, labely):
