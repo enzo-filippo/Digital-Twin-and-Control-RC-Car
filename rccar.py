@@ -25,7 +25,7 @@ class NonLinearBycicle():
 
         self.x = val_0[0]
         self.y = val_0[1]
-        self.psi = np.radians(val_0[2]+180)
+        self.psi = val_0[2]
         self.x_p = val_0[3]
         self.y_p = val_0[4]
         self.psi_p = val_0[5]
@@ -217,6 +217,7 @@ def anim(sim_file_directory, anim_fps):
             time_legend.set_text('Time: {:.2f}'.format(t[i]))
             return (*lines.values(), time_legend)
 
+
         t, x, y, xef, yef, xer, yer = read_file(os.path.join('results',sim_file_directory,'sim.dat'))
 
         fig, ax = plt.subplots()
@@ -240,16 +241,20 @@ def anim(sim_file_directory, anim_fps):
 
 def read_sim_file(sim_file_directory):
     t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = np.loadtxt(os.path.join('results',sim_file_directory,'sim.dat'), unpack=True)
-    return t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer 
+    return t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer
+
+def find_closest_value_position(arr, value):
+    absolute_diff = np.abs(arr - value)
+    closest_index = np.argmin(absolute_diff)
+    return closest_index
 
 def read_exp_file(exp_file_directory, file_name, initial_time):
     data = {}
-    with open(os.path.join('results',exp_file_directory, file_name), 'r') as file:
+    with open(os.path.join(exp_file_directory, file_name), 'r') as file:
         for line in file:
             if line.strip():  # Ignora linhas em branco
                 key, values = line.strip().split(':')
                 data[key.strip()] = list(map(float, values.split()))
-    print(type(data['abscisse']))
     t = np.array(data['abscisse'])
     pos = np.array(data['positions_barycentre_corr'])
     x = pos[:int((np.floor(len(pos)/2)))]/100
@@ -257,15 +262,124 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
     v = np.array(data['liste_vitesse_long_corr'])/100
     a = np.array(data['acceleration_corr'])/100
     
-    psi0 = np.degrees(np.arctan((y[-1]-y[0])/(x[-1]-x[0])))
     t_max =  np.max(t)-np.min(t)
     length = len(x)
 
+    treal = t
+    step = 0.1
+    stoptime = treal[-1]-initial_time
+    numpoints = int(stoptime/step)+1
+    tsim = np.linspace(0,stoptime,numpoints)
+
+    position = find_closest_value_position(treal, initial_time)
+    t_initial_real = treal[-1] - tsim[-1]
+    treal += -t_initial_real
+    treal = treal[position:]
+    xreal = x[position+1:]
+    yreal = y[position+1:]
+    vreal = v[position:]
+    areal = a[position-1:]
 
     #colocar modificacoes aqui
-    t0 = t[0]
-    x0 = x[0]
-    y0 = y[0]
-    v0 = v[0]
-    a0 = a[0]
-    return t, x, y, v, a, t_max, length, t0, x0, y0, v0, a0
+    t0 = treal[0]
+    Xe0 = xreal[0]
+    Ye0 = yreal[0]
+    v0 = vreal[0]
+    a0 = areal[0]
+    psi0_tout_droit = np.arctan((yreal[-1] - yreal[0])/(xreal[-1]-xreal[0]))
+    print("For the Y axis we have: y0 = ", yreal[0], " and yf = ", yreal[-1])
+    print("For the X axis we have: x0 = ", xreal[0], " and xf = ", xreal[-1])
+    return treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit
+
+def difference(sim_position, real_position):
+    size = len(sim_position)
+    absolute_diff = np.zeros(size)
+    sum = 0
+    for i in range(size):
+        absolute_diff[i] = sim_position[i] - real_position[i]
+        sum += absolute_diff[i]
+    return abs(absolute_diff), abs(sum)
+
+def plot(x,y, labelx, labely):
+    plt.xlabel(labelx)
+    plt.ylabel(labely)
+    plt.grid(True)
+    # axis('equal')
+    lw = 1
+    plt.plot(x, y, 'b', linewidth=lw)
+
+def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu, exp_name_file):
+    vsimu = np.sqrt((xpsimu**2 + ypsimu**2))
+    x_dif, _ = difference(xsimu,xreal)
+    y_dif, _ = difference(ysimu,yreal)
+    v_dif, _ = difference(vsimu[:-2],vreal[1:])
+
+    name_figures = exp_name_file.replace(".txt","")
+
+    
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("y [m]")
+    plt.ylabel("x [m]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Position (comparison of curves two axis) ")
+    plt.plot(xreal, yreal,'r:', label ="réel")
+    plt.plot(xsimu, ysimu, 'b:', label ="simulation")
+    plt.legend()
+    plt.savefig('figures/'+name_figures+'_Comparison_X_and_Y_axis.pdf')
+
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("x [m]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Position (comparison of curves - X axis) ")
+    plt.plot(treal, xreal,'r:', label ="réel")
+    plt.plot(tsimu, xsimu, 'b:', label ="simulation")
+    plt.legend()
+    plt.savefig('figures/'+name_figures+'_Comparison_X_axis.pdf')
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("y [m]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Position (comparison of curves - Y axis) ")
+    plt.plot(treal, yreal,'r:', label ="réel")
+    plt.plot(treal, ysimu, 'b:', label ="simulation")
+    plt.legend()
+    plt.savefig('figures/'+name_figures+'_Comparison_Y_axis.pdf')
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("error [m]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Postion error (between simu and real) ")
+    plt.plot(treal, x_dif,'r:', label ="error x")
+    plt.plot(treal, y_dif, 'b:', label ="error y")
+    plt.legend()
+    plt.savefig('figures/'+name_figures+'_Error_Position_X_and_Y.pdf')
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("v [m/s]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Speed (comparison of curves) ")
+    plt.plot(treal, vreal,'r:', label ="réel")
+    plt.plot(tsimu, vsimu, 'b:', label ="simulation")
+    plt.legend()
+    plt.savefig('figures/'+name_figures+'_Comparison_Speed.pdf')
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("t [s]")
+    plt.ylabel("error [m/s]")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.title(" Speed error (between simu and real) ")
+    plt.plot(treal[2:], v_dif, 'b:', label ="erreur de vitesse")
+    plt.legend()
+    plt.savefig('figures/'+name_figures+'_Error_Speed.pdf')
+    plt.show()

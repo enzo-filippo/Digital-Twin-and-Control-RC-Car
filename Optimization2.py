@@ -1,6 +1,4 @@
 import rccar
-import real_data
-
 
 sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
@@ -14,8 +12,8 @@ initial_time = 3
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
-mi = 0.59
-C_s = 0.1
+mi = 0.57
+C_s = 0.3
 C_alpha = 0.9
 
 # Fixed Parameter values
@@ -67,15 +65,47 @@ print(val_0)
 voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
 voiture.run(tsim, ode_param)
 
-print("___-------___-----")
-
 tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
 
-print(len(treal))
-print(len(yreal))
+C_mu_vector = rccar.np.linspace(0.5, 1, 10)
+C_s_vector = rccar.np.linspace(0, 1, 10)
+
+min_x = 10000
+min_y = 10000
+min_v = 10000
+for i in range(len(C_s_vector)):
+    for j in range(len(C_mu_vector)):
+        param = [max_steer_angle, m, Iz, lf, lr, Lw, r, C_mu_vector[j], C_s_vector[i], C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters]
+        voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
+        voiture.run(tsim, ode_param)
+        tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
+        
+        _, min_x_iterado = rccar.difference(Xe, xreal)
+        if min_x > min_x_iterado:
+            min_x = min_x_iterado
+            min_x_i = i
+            min_x_j = j
+        _, min_y_iterado = rccar.difference(Ye, yreal)
+        if min_y > min_y_iterado:
+            min_y = min_y_iterado
+            min_y_i = i
+            min_y_j = j
+        _, min_v_iterado = rccar.difference(rccar.np.sqrt(xpsimu**2+ypsimu**2)[:-2], vreal[1:])
+        if min_v > min_v_iterado:
+            min_v = min_v_iterado
+            min_v_i = i
+            min_v_j = j
+        
+
+print(C_s_vector[min_x_i])
+print(C_mu_vector[min_x_j])
+print(C_s_vector[min_y_i])
+print(C_mu_vector[min_y_j])
+print(C_s_vector[min_v_i])
+print(C_mu_vector[min_v_j])
 
 # PLOTS
-rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, exp_file_name)
+# rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu)
 
 
 
