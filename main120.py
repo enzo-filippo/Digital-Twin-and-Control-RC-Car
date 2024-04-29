@@ -1,5 +1,6 @@
 import rccar
 import real_data
+import numpy as np
 
 
 sim_file_directory = "curva_t_255_d_20"
@@ -77,7 +78,14 @@ print(len(yreal))
 # PLOTS
 rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, exp_file_name)
 
-
-
+real_data.plt.figure(figsize=(6, 4.5))
+real_data.plt.xlabel("t [s]")
+real_data.plt.ylabel("v [m/s]")
+real_data.plt.grid(True)
+#real_data.plt.axis('equal')
+real_data.plt.plot(treal[position:], vreal[position:],'r:', label ="real")
+real_data.plt.plot(t, v, 'b:', label ="sim")
+real_data.plt.legend()
+real_data.plt.show()
 
 

@@ -20,9 +20,9 @@ lf = 0.047
 lr = 0.05
 Lw = 0.0
 r = 0.024
-mi = 0.7
-C_s = 0.9
-C_alpha = 0.9
+mi = 0.5
+C_s = 0.3 # axis X
+C_alpha = 0.9 # axis Y
 Fz = m*9.98/4
 min_v = 0.1
 throttlereal = 100
@@ -76,9 +76,6 @@ real_data.plt.plot(xreal, yreal,'r:', label ="real")
 real_data.plt.plot(x, y, 'b:', label ="sim")
 real_data.plt.legend()
 real_data.plt.show()
-
-
-
 
 real_data.plt.figure(figsize=(6, 4.5))
 real_data.plt.xlabel("t [s]")
