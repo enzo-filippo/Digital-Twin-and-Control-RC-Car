@@ -382,8 +382,4 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.plot(treal[2:], v_dif, 'b:', label ="erreur de vitesse")
     plt.legend()
     plt.savefig('figures/'+name_figures+'_Error_Speed.pdf')
-<<<<<<< HEAD
     plt.show()
-=======
-    plt.show()
->>>>>>> 0ffa83dab0b53b0626f4d8848cfb85f15d09bfb0
