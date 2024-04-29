@@ -25,7 +25,7 @@ m = 0.04
 Iz = 0.000266
 lf = 0.047
 lr = 0.05
-Lw = 0.0
+Lw = 0.05
 r = 0.024
 Fz = m*9.98/4
 # throttle2omega = 0.05166/r
@@ -67,11 +67,12 @@ param = [max_steer_angle, m, Iz, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2o
 print(val_0)
 voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
 voiture.run(tsim, ode_param)
+tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv = rccar.read_sim_file(sim_file_directory)
 
-tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
+rccar.anim(sim_file_directory, 60)
 
 # PLOTS
-rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, exp_file_name)
+rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, exp_file_name)
 
 
 

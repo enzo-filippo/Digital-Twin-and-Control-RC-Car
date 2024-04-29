@@ -67,14 +67,24 @@ class NonLinearBycicle():
         psip = wsol[5]
         Xe = wsol[6] 
         Ye = wsol[7] 
-        Xef = self.f_w.Xe 
-        Yef = self.f_w.Ye 
-        Xer = self.r_w.Xe 
-        Yer = self.r_w.Ye
+        Xef1 = self.f_w.Xe + self.f_w.lf
+        Yef1 = self.f_w.Ye + self.f_w.Lw/2
+        Xer1 = self.r_w.Xe - self.r_w.lr
+        Yer1 = self.r_w.Ye + self.f_w.Lw/2
+        Xef2 = self.f_w.Xe + self.f_w.lf
+        Yef2 = self.f_w.Ye - self.f_w.Lw/2
+        Xer2 = self.r_w.Xe - self.r_w.lr
+        Yer2 = self.r_w.Ye - self.f_w.Lw/2
+
+        throttle_values = np.zeros(len(t))
+        delta_values = np.zeros(len(t))
+        for i in range(len(t)):
+            throttle_values[i] = self.f_w.throttle(t[i])
+            delta_values[i] = self.f_w.delta(t[i])
 
         with open(os.path.join('results',self.name,'sim.dat'), 'w') as f:
-            for t1, w1, xef, yef, xer, yer in zip(t, wsol, self.f_w.Xe, self.f_w.Ye, self.r_w.Xe, self.r_w.Ye):
-                print(t1, w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], w1[7], xef, yef, xer, yer, file=f)
+            for t1, w1, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv in zip(t, wsol, Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2, throttle_values, delta_values):
+                print(t1, w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], w1[7], xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, file=f)
 
 class wheel():
     def __init__(self, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters, max_steer):
@@ -111,8 +121,9 @@ class wheel():
             signal = 1
 
         numerador = Vy + self.lf * psi_p - self.lr * psi_p
-        denominador = Vx + signal*self.Lw/2 * psi_p
-        
+        # denominador = Vx + signal*self.Lw/2 * psi_p
+        denominador = Vx
+
         theta_V = np.arctan(numerador/denominador) 
         if np.isnan(theta_V):
             theta_V = 0
@@ -197,28 +208,29 @@ def set_delta(command, t0, tf, type):
     return delta_parameters
 
 def anim(sim_file_directory, anim_fps):
-        def read_file(filename):
-            data = np.loadtxt(filename)
-            return data[:, 0], data[:, 7], data[:, 8], data[:, 9], data[:, 10], data[:, 11], data[:, 12]
 
         def init():
             lines['cg'].set_data([], [])
-            lines['fw'].set_data([], [])
-            lines['rw'].set_data([], [])
+            lines['fw1'].set_data([], [])
+            lines['rw1'].set_data([], [])
+            lines['fw2'].set_data([], [])
+            lines['rw2'].set_data([], [])
             return lines.values()
 
         def animate(i):
             lines['cg'].set_data(x[i], y[i])
-            lines['fw'].set_data(xef[i], yef[i])
-            lines['rw'].set_data(xer[i], yer[i])
+            lines['fw1'].set_data(xef1[i], yef1[i])
+            lines['rw1'].set_data(xer1[i], yer1[i])
+            lines['fw2'].set_data(xef2[i], yef2[i])
+            lines['rw2'].set_data(xer2[i], yer2[i])
             lines['cgrastro'].set_data(x[:i], y[:i])
-            lines['fwrastro'].set_data(xef[:i], yef[:i])
-            lines['rwrastro'].set_data(xer[:i], yer[:i])
+            lines['fwrastro1'].set_data(xef1[:i], yef1[:i])
+            lines['rwrastro1'].set_data(xer1[:i], yer1[:i])
             time_legend.set_text('Time: {:.2f}'.format(t[i]))
             return (*lines.values(), time_legend)
 
 
-        t, x, y, xef, yef, xer, yer = read_file(os.path.join('results',sim_file_directory,'sim.dat'))
+        t, x, xpsimu, y, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv = read_sim_file(sim_file_directory)
 
         fig, ax = plt.subplots()
         ax.set_xlim(np.min(np.concatenate((x,y)))-0.1, np.max(np.concatenate((x,y)))+0.1)  # Adjust x-axis limits as needed
@@ -240,8 +252,8 @@ def anim(sim_file_directory, anim_fps):
         plt.show()
 
 def read_sim_file(sim_file_directory):
-    t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = np.loadtxt(os.path.join('results',sim_file_directory,'sim.dat'), unpack=True)
-    return t, x, xp, y, yp, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer
+    t, x, xp, y, yp, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv = np.loadtxt(os.path.join('results',sim_file_directory,'sim.dat'), unpack=True)
+    return t, x, xp, y, yp, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv
 
 def find_closest_value_position(arr, value):
     absolute_diff = np.abs(arr - value)
@@ -308,7 +320,7 @@ def plot(x,y, labelx, labely):
     lw = 1
     plt.plot(x, y, 'b', linewidth=lw)
 
-def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu, exp_name_file):
+def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu, tv, dv, exp_name_file):
     vsimu = np.sqrt((xpsimu**2 + ypsimu**2))
     x_dif, _ = difference(xsimu,xreal)
     y_dif, _ = difference(ysimu,yreal)
@@ -382,4 +394,21 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.plot(treal[2:], v_dif, 'b:', label ="erreur de vitesse")
     plt.legend()
     plt.savefig('figures/'+name_figures+'_Error_Speed.pdf')
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("throttle")
+    plt.ylabel("time [s]")
+    plt.grid(True)
+    plt.title(" Throttle input ")
+    plt.plot(tsimu, tv,'r:')
+    plt.savefig('figures/'+name_figures+'_Throttle.pdf')
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("delta")
+    plt.ylabel("time [s]")
+    plt.grid(True)
+    plt.title(" Delta input ")
+    plt.plot(tsimu, dv,'r:')
+    plt.savefig('figures/'+name_figures+'_Delta.pdf')
+
     plt.show()
