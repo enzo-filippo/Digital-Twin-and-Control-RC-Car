@@ -15,7 +15,7 @@ initial_time = 3
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
 mi = 0.59
-C_s = 0.11
+C_s = 0.1
 C_alpha = 0.9
 
 # Fixed Parameter values
@@ -67,7 +67,12 @@ print(val_0)
 voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
 voiture.run(tsim, ode_param)
 
+print("___-------___-----")
+
 tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
+
+print(len(treal))
+print(len(yreal))
 
 # PLOTS
 rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, exp_file_name)
