@@ -146,11 +146,11 @@ class wheel():
             return t*0 + 127
         if self.throttle_type == "step":
             if t < self.t0_throttle:
-                return t*0 + 0
+                return t*0 + 0.1
             if t >= self.t0_throttle and t < self.tf_throttle:
                 return t*0 + self.throttle_command
             if t > self.tf_throttle:
-                return t*0 + 0
+                return t*0 + 0.1
 
     def delta(self,t):
         if self.delta_type == "straight":
@@ -268,15 +268,18 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
                 key, values = line.strip().split(':')
                 data[key.strip()] = list(map(float, values.split()))
     t = np.array(data['abscisse'])
-    pos = np.array(data['positions_barycentre_corr'])
-    x = pos[:int((np.floor(len(pos)/2)))]/100
-    y = pos[int((np.floor(len(pos)/2))):]/100
+    if 'positions_barycentre_corr' in data:
+        pos = np.array(data['positions_barycentre_corr'])
+        x = pos[:int((np.floor(len(pos)/2)))]/100
+        y = pos[int((np.floor(len(pos)/2))):]/100
+    else:
+        x = np.array(data['positions_barycentre_corr_x'])/100
+        y = np.array(data['positions_barycentre_corr_y'])/100
     v = np.array(data['liste_vitesse_long_corr'])/100
     a = np.array(data['acceleration_corr'])/100
     
     t_max =  np.max(t)-np.min(t)
     length = len(x)
-
     treal = t
     step = 0.1
     stoptime = treal[-1]-initial_time
@@ -359,7 +362,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.axis('equal')
     plt.title(" Position (comparison of curves - Y axis) ")
     plt.plot(treal, yreal,'r:', label ="réel")
-    plt.plot(treal, ysimu, 'b:', label ="simulation")
+    plt.plot(tsimu, ysimu, 'b:', label ="simulation")
     plt.legend()
     plt.savefig('figures/'+name_figures+'_Comparison_Y_axis.pdf')
 
@@ -369,8 +372,8 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.grid(True)
     plt.axis('equal')
     plt.title(" Postion error (between simu and real) ")
-    plt.plot(treal, x_dif,'r:', label ="error x")
-    plt.plot(treal, y_dif, 'b:', label ="error y")
+    plt.plot(tsimu, x_dif,'r:', label ="error x")
+    plt.plot(tsimu, y_dif, 'b:', label ="error y")
     plt.legend()
     plt.savefig('figures/'+name_figures+'_Error_Position_X_and_Y.pdf')
 
@@ -391,7 +394,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.grid(True)
     plt.axis('equal')
     plt.title(" Speed error (between simu and real) ")
-    plt.plot(treal[2:], v_dif, 'b:', label ="erreur de vitesse")
+    plt.plot(tsimu[2:], v_dif, 'b:', label ="erreur de vitesse")
     plt.legend()
     plt.savefig('figures/'+name_figures+'_Error_Speed.pdf')
 
