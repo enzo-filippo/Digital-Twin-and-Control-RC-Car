@@ -1,7 +1,7 @@
 import rccar
 
 # Real data and simulation:
-throttle_real_command = 30
+throttle_real_command = 57
 
 sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
@@ -17,7 +17,7 @@ treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0,
 # Variable Parameter values
 mi = 0.59
 C_s = 0.1
-C_alpha = 0.5
+C_alpha = 0.9
 
 # Fixed Parameter values
 max_steer_angle = 30.0
@@ -28,7 +28,7 @@ lr = 0.05
 Lw = 0.0
 r = 0.024
 Fz = m*9.98/4
-throttle2omega = 0.061/r
+throttle2omega = 0.06/r
 # throttle2omega = 0.0595/r
 
 # Simulation conditions

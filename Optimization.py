@@ -2,18 +2,18 @@ import rccar
 
 sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
-exp_file_name = "90.txt"
+exp_file_name = "hyper_vitesse_ca_tourne_pas.txt"
 
 # ODE Solver parameters - INPUTS FOR EVERY ANALYSIS
 abserr = 1.0e-8
 relerr = 1.0e-6
-initial_time = 5.35
+initial_time = 1.8
 
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
 mi = 0.59
-C_s = 0.11
+C_s = 0.8
 C_alpha = 0.9
 
 # Fixed Parameter values
@@ -66,7 +66,7 @@ print(val_0)
 voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
 voiture.run(tsim, ode_param)
 
-tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
+tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv = rccar.read_sim_file(sim_file_directory)
 
 
 C_s_vector = rccar.np.linspace(0, 1, 100)
@@ -82,7 +82,7 @@ for i in range(len(C_s_vector)):
     param = [max_steer_angle, m, Iz, lf, lr, Lw, r, mi, C_s_vector[i], C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters]
     voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
     voiture.run(tsim, ode_param)
-    tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, Xef, Yef, Xer, Yer = rccar.read_sim_file(sim_file_directory)
+    tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv = rccar.read_sim_file(sim_file_directory)
 
     # _, min_x_iterado = rccar.difference(Xe, xreal)
     # if min_x > min_x_iterado:

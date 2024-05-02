@@ -44,7 +44,8 @@ delta_type = "step"
 
 x0 = Xe0
 y0 = Ye0 
-psi0 = psi0_tout_droit + rccar.np.pi # in rad
+# psi0 = psi0_tout_droit + rccar.np.pi # in rad
+psi0 = 0
 xp0 = 0.0
 xpp0 = 0.0
 yp0 = 0.0
