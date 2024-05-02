@@ -61,17 +61,18 @@ ode_param = [abserr, relerr, stoptime, numpoints]
 throttle_sim = -(throttle_real_command - 127)
 throttle_parameters = rccar.set_throttle(throttle_sim, initial_time_throttle, final_time_throttle, throttle_type)
 print(throttle_parameters)
-delta_parameters = rccar.set_delta(delta_real_command, initial_time_delta, final_time_delta, delta_type)
+delta_sim = ((delta_real_command-127)*max_steer_angle)/127
+delta_parameters = rccar.set_delta(delta_sim, initial_time_delta, final_time_delta, delta_type)
 print(delta_parameters)
 param = [max_steer_angle, m, Iz, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters]
 print(val_0)
 voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
 voiture.run(tsim, ode_param)
 
-tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv = rccar.read_sim_file(sim_file_directory)
+tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r = rccar.read_sim_file(sim_file_directory)
 
 # PLOTS
-rccar.ComparisonPlot(treal[1:], xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, exp_file_name)
+rccar.ComparisonPlot(treal[1:], xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_file_name)
 
 
 

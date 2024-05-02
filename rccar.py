@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import os
 
+glissement_f = np.array([])
+glissement_r = np.array([])
+
 # non-linear lateral bicycle model
 class NonLinearBycicle():
     def __init__(self, name, parameters, val_0):
@@ -82,9 +85,11 @@ class NonLinearBycicle():
             throttle_values[i] = self.f_w.throttle(t[i])
             delta_values[i] = self.f_w.delta(t[i])
 
+        global glissement_f, glissement_r
+
         with open(os.path.join('results',self.name,'sim.dat'), 'w') as f:
-            for t1, w1, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv in zip(t, wsol, Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2, throttle_values, delta_values):
-                print(t1, w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], w1[7], xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, file=f)
+            for t1, w1, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r in zip(t, wsol, Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2, throttle_values, delta_values, glissement_f, glissement_r):
+                print(t1, w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], w1[7], xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r, file=f)
 
 class wheel():
     def __init__(self, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters, max_steer):
@@ -110,9 +115,9 @@ class wheel():
         Vx = x_p
         Vy = y_p
         
-        if throttle > 0:
+        if throttle > 0.00001:
             s = (self.r*omega - Vx)/(self.r*omega)
-        if throttle <= 0:
+        if throttle <= 0.00001:
             s = (self.r*omega - Vx)/np.abs(Vx)
 
         if(self.lr != 0):
@@ -132,7 +137,7 @@ class wheel():
         C_lambda = (self.mi * self.Fz*(1+s))/(2*np.sqrt((self.C_s*s)**2 + (self.C_alpha*np.tan(alpha)**2)))
         if C_lambda < 1:
             f_C_lambda = (2-C_lambda)*C_lambda
-        else:
+        elif(C_lambda >= 1):
             f_C_lambda = 1 
 
         Fxp = self.C_s *(s/(1+s))*f_C_lambda
@@ -141,16 +146,18 @@ class wheel():
         self.Fx = Fxp*np.cos(delta) - Fyp*np.sin(delta)
         self.Fy = Fxp*np.sin(delta) + Fyp*np.cos(delta)
 
+        return s
+
     def throttle(self,t):
         if self.throttle_type == "full":
             return t*0 + 127
         if self.throttle_type == "step":
             if t < self.t0_throttle:
-                return t*0 + 0.1
+                return t*0 + 0.00001
             if t >= self.t0_throttle and t < self.tf_throttle:
                 return t*0 + self.throttle_command
             if t > self.tf_throttle:
-                return t*0 + 0.1
+                return t*0 + 0.00001
 
     def delta(self,t):
         if self.delta_type == "straight":
@@ -177,8 +184,13 @@ def vectorfield(w, t, coef):
     x, xp, y, yp, psi, psip, Xe, Ye = w
     f_w, r_w, m, Iz = coef
 
-    f_w.update_dugoff_forces(f_w.throttle(t), f_w.delta(t), psip, xp, yp)
-    r_w.update_dugoff_forces(r_w.throttle(t), 0.0, psip, xp, yp)
+    delta = f_w.delta(t)
+    print(delta)
+    s_f = f_w.update_dugoff_forces(f_w.throttle(t), delta, psip, xp, yp)
+    s_r = r_w.update_dugoff_forces(r_w.throttle(t), 0.0, psip, xp, yp)
+    global glissement_f, glissement_r
+    glissement_f = np.append(glissement_f,s_f)
+    glissement_r = np.append(glissement_r,s_r)
 
     Fxf = f_w.Fx
     Fyf = f_w.Fy
@@ -230,7 +242,7 @@ def anim(sim_file_directory, anim_fps):
             return (*lines.values(), time_legend)
 
 
-        t, x, xpsimu, y, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv = read_sim_file(sim_file_directory)
+        t, x, xpsimu, y, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r = read_sim_file(sim_file_directory)
 
         fig, ax = plt.subplots()
         ax.set_xlim(np.min(np.concatenate((x,y)))-0.1, np.max(np.concatenate((x,y)))+0.1)  # Adjust x-axis limits as needed
@@ -252,8 +264,8 @@ def anim(sim_file_directory, anim_fps):
         plt.show()
 
 def read_sim_file(sim_file_directory):
-    t, x, xp, y, yp, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv = np.loadtxt(os.path.join('results',sim_file_directory,'sim.dat'), unpack=True)
-    return t, x, xp, y, yp, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv
+    t, x, xp, y, yp, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r = np.loadtxt(os.path.join('results',sim_file_directory,'sim.dat'), unpack=True)
+    return t, x, xp, y, yp, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r
 
 def find_closest_value_position(arr, value):
     absolute_diff = np.abs(arr - value)
@@ -323,7 +335,7 @@ def plot(x,y, labelx, labely):
     lw = 1
     plt.plot(x, y, 'b', linewidth=lw)
 
-def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu, tv, dv, exp_name_file):
+def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_name_file):
     vsimu = np.sqrt((xpsimu**2 + ypsimu**2))
     x_dif, _ = difference(xsimu,xreal)
     y_dif, _ = difference(ysimu,yreal)
@@ -413,5 +425,15 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.title(" Delta input ")
     plt.plot(tsimu, dv,'r:')
     plt.savefig('figures/'+name_figures+'_Delta.pdf')
+
+    plt.figure(figsize=(6, 4.5))
+    plt.xlabel("glissement [%]")
+    plt.ylabel("time [s]")
+    plt.grid(True)
+    plt.title(" Glissement")
+    plt.plot(tsimu, s_f*100,'r:', label ="frontal")
+    plt.plot(tsimu, s_r*100,'b:', label ="arriere")
+    plt.legend()
+    plt.savefig('figures/'+name_figures+'_glissement.pdf')
 
     plt.show()
