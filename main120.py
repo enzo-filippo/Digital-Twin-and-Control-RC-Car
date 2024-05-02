@@ -1,4 +1,5 @@
 import rccar
+import animation
 
 # Real data and simulation:
 throttle_real_command = 120
@@ -73,6 +74,5 @@ tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1,
 # PLOTS
 rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, exp_file_name)
 
-
-
+animation.animate_car(xsimu, ysimu,xpsimu, ypsimu, tsimu)
 

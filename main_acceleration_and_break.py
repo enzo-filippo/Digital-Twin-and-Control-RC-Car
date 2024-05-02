@@ -1,7 +1,7 @@
 import rccar
 
 # Real data and simulation:
-throttle_real_command = 47
+throttle_real_command = 30
 
 sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
@@ -16,8 +16,8 @@ initial_time = 1.8
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
 mi = 0.59
-C_s = 0.16
-C_alpha = 0.9
+C_s = 0.1
+C_alpha = 0.5
 
 # Fixed Parameter values
 max_steer_angle = 30.0
@@ -28,7 +28,7 @@ lr = 0.05
 Lw = 0.0
 r = 0.024
 Fz = m*9.98/4
-throttle2omega = 0.059/r
+throttle2omega = 0.061/r
 # throttle2omega = 0.0595/r
 
 # Simulation conditions
@@ -44,7 +44,7 @@ delta_type = "straight"
 # Initial conditions
 x0 = Xe0
 y0 = Ye0 
-psi0 = psi0_tout_droit + rccar.np.pi # in rad
+psi0 = psi0_tout_droit  # in rad
 xp0 = 0.0
 xpp0 = 0.0
 yp0 = 0.0

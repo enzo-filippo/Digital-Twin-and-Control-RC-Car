@@ -33,17 +33,18 @@ throttle2omega = 0.059/r
 
 # Simulation conditions
 initial_time_throttle = 0
-final_time_throttle = 100
+final_time_throttle = 4
 throttle_type = "step"
-delta_real_command = 0
-initial_time_delta = 0
-final_time_delta = stoptime
-delta_type = "straight"
+delta_real_command = 180
+initial_time_delta = 0.5
+final_time_delta = 1.5 
+delta_type = "step"
 
 # Initial conditions
+
 x0 = Xe0
 y0 = Ye0 
-psi0 = -psi0_tout_droit + rccar.np.pi # in rad
+psi0 = psi0_tout_droit + rccar.np.pi # in rad
 xp0 = 0.0
 xpp0 = 0.0
 yp0 = 0.0
