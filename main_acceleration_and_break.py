@@ -16,8 +16,8 @@ initial_time = 1.8
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
 mi = 0.59
-C_s = 1
-C_alpha = 1
+C_s = 0.1
+C_alpha = 0.9
 
 # Fixed Parameter values
 max_steer_angle = 30.0

@@ -427,8 +427,8 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.savefig('figures/'+name_figures+'_Delta.pdf')
 
     plt.figure(figsize=(6, 4.5))
-    plt.xlabel("glissement [%]")
-    plt.ylabel("time [s]")
+    plt.xlabel("time [s]")
+    plt.ylabel("glissement [%]")
     plt.grid(True)
     plt.title(" Glissement")
     plt.plot(tsimu, s_f*100,'r:', label ="frontal")

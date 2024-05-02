@@ -70,10 +70,10 @@ print(val_0)
 voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
 voiture.run(tsim, ode_param)
 
-tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv = rccar.read_sim_file(sim_file_directory)
+tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r = rccar.read_sim_file(sim_file_directory)
 
 # PLOTS
-rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, exp_file_name)
+rccar.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_file_name)
 
-animation.animate_car(xsimu, ysimu,xpsimu, ypsimu, tsimu)
+# animation.animate_car(xsimu, ysimu,xpsimu, ypsimu, tsimu)
 
