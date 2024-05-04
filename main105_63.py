@@ -16,9 +16,9 @@ initial_time = 1.9
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar2.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
-mi = 0.59
-C_s = 0.45
-C_alpha = 0.0
+mi = 0.7
+C_s = 0.61
+C_alpha = 0.27
 
 # Fixed Parameter values
 max_steer_angle = 30.0
@@ -29,21 +29,21 @@ lr = 0.05
 Lw = 0.0
 r = 0.024
 Fz = m*9.98/4
-throttle2omega = 0.05166/r
+throttle2omega = 0.0547/r
 # throttle2omega = 0.0595/r
 
 # Simulation conditions
 initial_time_throttle = 0
 final_time_throttle = 100
 throttle_type = "step"
-initial_time_delta = 2.3
+initial_time_delta = 1.7
 final_time_delta = stoptime
 delta_type = "step"
 
 # Initial conditions
 x0 = Xe0
 y0 = Ye0 
-psi0 = rccar2.np.arctan(1.156)+rccar2.np.pi # in rad
+psi0 = rccar2.np.arctan(1.345)+rccar2.np.pi # in rad
 xp0 = 0.0
 xpp0 = 0.0
 yp0 = 0.0

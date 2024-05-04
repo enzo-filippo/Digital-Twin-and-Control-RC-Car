@@ -157,7 +157,7 @@ class Wheel():
             if t < self.t0_throttle:
                 return t*0 + 0
             elif self.t0_throttle <= t < self.tf_throttle:
-                return t*0 + self.throttle_command*(1/(1+np.exp(-10*t)))
+                return t*0 + self.throttle_command*(1/(1+np.exp(-1.5*t)))
             else:
                 return t*0 + 0
 
@@ -168,7 +168,7 @@ class Wheel():
             if t < self.t0_delta:
                 return t*0 + 0
             elif self.t0_delta <= t < self.tf_delta:
-                return t*0 + self.delta_command*(1/(1+np.exp(-10*t)))
+                return t*0 + self.delta_command*(1/(1+np.exp(-1.5*t)))
             else:
                 return t*0 + 0
 
