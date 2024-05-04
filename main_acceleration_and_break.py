@@ -1,5 +1,6 @@
 import rccar
 
+
 # Real data and simulation:
 throttle_real_command = 57
 
@@ -18,6 +19,9 @@ treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0,
 mi = 0.59
 C_s = 0.1
 C_alpha = 0.9
+
+
+# G = K/1+s fazer um modelo de primeira ordem pra suavizar o step de comando
 
 # Fixed Parameter values
 max_steer_angle = 30.0

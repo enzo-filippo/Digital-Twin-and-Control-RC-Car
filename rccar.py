@@ -110,13 +110,25 @@ class wheel():
         if self.lr == 0:
             self.name = "f_w"
 
+
     def update_dugoff_forces(self, throttle, delta, psi_p, x_p, y_p):
         omega = self.throttle2omega*throttle
         Vx = x_p
         Vy = y_p
         
+        omega_r = self.r * omega
+        print(f"omega: {omega}, Vx: {Vx}, Vy: {Vy}")
+
+        # if (throttle > 0.0001):
+        #     s = (omega_r - Vx) / abs(omega_r)
+        # if (throttle < 0.0001):
+        #     s = (omega_r - Vx)/ np.abs(Vx)
+        # else:
+        #     s = 0  # Avoid division by zero if omega_r is zero
+        
         if throttle > 0.00001:
             s = (self.r*omega - Vx)/(self.r*omega)
+            # print("Analise do comportamento, valor de s = ",s, " Valor de omega = ", omega, " Valor de vx = ", Vx)
         if throttle <= 0.00001:
             s = (self.r*omega - Vx)/np.abs(Vx)
 
@@ -158,7 +170,26 @@ class wheel():
                 return t*0 + self.throttle_command
             if t > self.tf_throttle:
                 return t*0 + 0.00001
-
+    # def throttle(self, t):
+    #     if self.throttle_type == "full":
+    #         return t*0 + 127
+    #     if self.throttle_type == "step":
+    #         # Ensure smooth ramp-up and ramp-down
+    #         ramp_up_duration = 0.5  # Duration for the throttle to increase
+    #         ramp_down_start = self.tf_throttle - ramp_up_duration  # Start decreasing before tf_throttle
+    #         if t < self.t0_throttle:
+    #             return 0.00001
+    #         elif t < self.t0_throttle + ramp_up_duration:
+    #             # Linearly increase from 0 to the throttle_command
+    #             return ((t - self.t0_throttle) / ramp_up_duration) * self.throttle_command
+    #         elif t < ramp_down_start:
+    #             return self.throttle_command
+    #         elif t < self.tf_throttle:
+    #             # Linearly decrease to 0
+    #             return ((self.tf_throttle - t) / ramp_up_duration) * self.throttle_command
+    #         else:
+    #             return 0.00001
+   
     def delta(self,t):
         if self.delta_type == "straight":
             return t*0 + 0
@@ -185,7 +216,6 @@ def vectorfield(w, t, coef):
     f_w, r_w, m, Iz = coef
 
     delta = f_w.delta(t)
-    print(delta)
     s_f = f_w.update_dugoff_forces(f_w.throttle(t), delta, psip, xp, yp)
     s_r = r_w.update_dugoff_forces(r_w.throttle(t), 0.0, psip, xp, yp)
     global glissement_f, glissement_r

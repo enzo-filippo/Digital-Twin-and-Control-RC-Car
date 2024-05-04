@@ -7,6 +7,7 @@ throttle_real_command = 120
 sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
 exp_file_name = str(throttle_real_command) + ".txt"
+# const_t = 0.2
 
 # ODE Solver parameters - INPUTS FOR EVERY ANALYSIS
 abserr = 1.0e-8
