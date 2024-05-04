@@ -3,6 +3,7 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import os
+import multiprocessing
 
 glissement_f = np.array([])
 glissement_r = np.array([])
@@ -52,6 +53,61 @@ class NonLinearBicycle():
         # Post-process the solution
         # Extract the solution and process as per your specific needs
         wsol = sol.y.T
+        nfev = sol.nfev
+        steps_per_time_step = int(nfev/len(t))
+        self.f_w.Xe = wsol[:,6] + self.f_w.lf*np.cos(wsol[:,4])
+        self.f_w.Ye = wsol[:,7] + self.f_w.lf*np.sin(wsol[:,4])
+        self.r_w.Xe = wsol[:,6] - self.r_w.lr*np.cos(wsol[:,4])
+        self.r_w.Ye = wsol[:,7] - self.r_w.lr*np.sin(wsol[:,4])
+        
+        x = wsol[0] 
+        xp = wsol[1] 
+        y = wsol[2] 
+        yp = wsol[3] 
+        psi = wsol[4] 
+        psip = wsol[5]
+        Xe = wsol[6] 
+        Ye = wsol[7] 
+        Xef1 = self.f_w.Xe + self.f_w.lf
+        Yef1 = self.f_w.Ye + self.f_w.Lw/2
+        Xer1 = self.r_w.Xe - self.r_w.lr
+        Yer1 = self.r_w.Ye + self.f_w.Lw/2
+        Xef2 = self.f_w.Xe + self.f_w.lf
+        Yef2 = self.f_w.Ye - self.f_w.Lw/2
+        Xer2 = self.r_w.Xe - self.r_w.lr
+        Yer2 = self.r_w.Ye - self.f_w.Lw/2
+
+        throttle_values = np.zeros(len(t))
+        delta_values = np.zeros(len(t))
+        for i in range(len(t)):
+            throttle_values[i] = self.f_w.throttle(t[i])
+            delta_values[i] = self.f_w.delta(t[i])
+
+        global glissement_f, glissement_r
+
+        t_norm = np.linspace(0, t[-1], len(glissement_f))
+        # print(t_norm)
+        plt.figure(figsize=(6, 4.5))
+        plt.xlabel("time [s]")
+        plt.ylabel("glissement [%]")
+        plt.grid(True)
+        plt.title(" Glissement")
+        plt.plot(t_norm, glissement_f*100,'r:', label ="frontal")
+        plt.plot(t_norm, glissement_r*100,'b:', label ="arriere")
+        plt.legend()
+
+        glissement_f_norm = np.zeros(len(t))
+        glissement_r_norm = np.zeros(len(t))
+
+        for i in range(len(t)):
+            glissement_f_norm[i] = glissement_f[i*steps_per_time_step]
+            glissement_r_norm[i] = glissement_r[i*steps_per_time_step]
+        # print(glissement_f)
+        # print(glissement_r)
+        
+        with open(os.path.join('results',self.name,'sim.dat'), 'w') as f:
+            for t1, w1, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r in zip(t, wsol, Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2, throttle_values, delta_values, glissement_f_norm, glissement_r_norm):
+                print(t1, w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], w1[7], xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r, file=f)
 
 class Wheel():
     def __init__(self, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters, max_steer):
@@ -71,15 +127,14 @@ class Wheel():
             self.name = "r_w"
         if self.lr == 0:
             self.name = "f_w"
-
+        self.old_omega_r = 0
 
     def update_dugoff_forces(self, throttle, delta, psi_p, x_p, y_p):
         omega = self.throttle2omega*throttle
         Vx = x_p
         Vy = y_p
-        
         omega_r = self.r * omega
-        print(f"omega: {omega}, Vx: {Vx}, Vy: {Vy}")
+        # print(f"omega: {omega}, Vx: {Vx}, Vy: {Vy}")
 
         # if (throttle > 0.0001):
         #     s = (omega_r - Vx) / abs(omega_r)
@@ -88,12 +143,15 @@ class Wheel():
         # else:
         #     s = 0  # Avoid division by zero if omega_r is zero
         
-        if throttle > 0.00001:
-            s = (self.r*omega - Vx)/(self.r*omega)
+        if np.round(self.old_omega_r,2) <= np.round(omega_r,2):
+            self.s = (self.r*omega - Vx)/(self.r*omega)
             # print("Analise do comportamento, valor de s = ",s, " Valor de omega = ", omega, " Valor de vx = ", Vx)
-        if throttle <= 0.00001:
-            s = (self.r*omega - Vx)/np.abs(Vx)
+            print("s", s, "vx", Vx, "omega_r", self.r*omega, "old_omega_r", self.old_omega_r)
+        else:
+            self.s = (self.r*omega - Vx)/np.abs(Vx)
+            # print("s", s, "vx", Vx, "omega_r", self.r*omega, "old_omega_r", self.old_omega_r)
 
+        self.old_omega_r = omega_r
         if(self.lr != 0):
             signal = -1
         elif(self.lf != 0):
@@ -120,17 +178,19 @@ class Wheel():
         self.Fx = Fxp*np.cos(delta) - Fyp*np.sin(delta)
         self.Fy = Fxp*np.sin(delta) + Fyp*np.cos(delta)
 
-        return s
+        return self.Fx, self.Fy, s
 
     def throttle(self,t):
         if self.throttle_type == "full":
             return t*0 + 127
         if self.throttle_type == "step":
-            if t < self.t0_throttle:
+            if np.round(t,2) <  np.round(self.t0_throttle,2):
                 return t*0 + 0.00001
-            if t >= self.t0_throttle and t < self.tf_throttle:
+            elif np.round(t,2) >=  np.round(self.t0_throttle,2) and np.round(t,2) < np.round(self.tf_throttle,2):
                 return t*0 + self.throttle_command
-            if t > self.tf_throttle:
+            elif np.round(t,2) > np.round(self.tf_throttle,2):
+                return t*0 + 0.00001
+            else:
                 return t*0 + 0.00001
     # def throttle(self, t):
     #     if self.throttle_type == "full":
@@ -168,17 +228,13 @@ def vectorfield(t, w, coef):
     f_w, r_w, m, Iz = coef
 
     delta = f_w.delta(t)
-    s_f = f_w.update_dugoff_forces(f_w.throttle(t), delta, psip, xp, yp)
-    s_r = r_w.update_dugoff_forces(r_w.throttle(t), 0.0, psip, xp, yp)
+    Fxf, Fyf, s_f = f_w.update_dugoff_forces(f_w.throttle(t), delta, psip, xp, yp)
+    Fxr, Fyr, s_r = r_w.update_dugoff_forces(r_w.throttle(t), 0.0, psip, xp, yp)
 
     global glissement_f, glissement_r
     glissement_f = np.append(glissement_f, s_f)
     glissement_r = np.append(glissement_r, s_r)
 
-    Fxf = f_w.Fx
-    Fyf = f_w.Fy
-    Fxr = r_w.Fx
-    Fyr = r_w.Fy
     lf = f_w.lf
     lr = r_w.lr
 
@@ -249,8 +305,8 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
     v0 = vreal[0]
     a0 = areal[0]
     psi0_tout_droit = np.arctan((yreal[-1] - yreal[0])/(xreal[-1]-xreal[0]))
-    print("For the Y axis we have: y0 = ", yreal[0], " and yf = ", yreal[-1])
-    print("For the X axis we have: x0 = ", xreal[0], " and xf = ", xreal[-1])
+    # print("For the Y axis we have: y0 = ", yreal[0], " and yf = ", yreal[-1])
+    # print("For the X axis we have: x0 = ", xreal[0], " and xf = ", xreal[-1])
     return treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit
 
 def difference(sim_position, real_position):
@@ -277,8 +333,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     v_dif, _ = difference(vsimu[:-2],vreal[1:])
 
     name_figures = exp_name_file.replace(".txt","")
-
-    
+   
     plt.figure(figsize=(6, 4.5))
     plt.xlabel("y [m]")
     plt.ylabel("x [m]")
