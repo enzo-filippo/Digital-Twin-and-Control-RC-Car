@@ -1,9 +1,8 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import os
-import multiprocessing
+from scipy.interpolate import interp1d
 
 glissement_f = np.array([])
 glissement_r = np.array([])
@@ -44,22 +43,14 @@ class NonLinearBicycle():
         abserr, relerr = ode_p[:2]
         t_span = (t[0], t[-1])
 
-        sol = solve_ivp(lambda t, w: vectorfield(t, w, [self.f_w, self.r_w, self.m, self.Iz]),
+        sol = solve_ivp(lambda t, w: vectorfield(t, w, self),
                         t_span, self.val_0, t_eval=t, atol=abserr, rtol=relerr, method='RK45')
 
         if not sol.success:
             raise RuntimeError("ODE solver failed to find a solution")
 
-        # Post-process the solution
-        # Extract the solution and process as per your specific needs
         wsol = sol.y.T
-        nfev = sol.nfev
-        steps_per_time_step = int(nfev/len(t))
-        self.f_w.Xe = wsol[:,6] + self.f_w.lf*np.cos(wsol[:,4])
-        self.f_w.Ye = wsol[:,7] + self.f_w.lf*np.sin(wsol[:,4])
-        self.r_w.Xe = wsol[:,6] - self.r_w.lr*np.cos(wsol[:,4])
-        self.r_w.Ye = wsol[:,7] - self.r_w.lr*np.sin(wsol[:,4])
-        
+
         x = wsol[0] 
         xp = wsol[1] 
         y = wsol[2] 
@@ -83,31 +74,29 @@ class NonLinearBicycle():
             throttle_values[i] = self.f_w.throttle(t[i])
             delta_values[i] = self.f_w.delta(t[i])
 
-        global glissement_f, glissement_r
+        Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2 = [], [], [], [], [], [], [], []
 
-        t_norm = np.linspace(0, t[-1], len(glissement_f))
-        # print(t_norm)
-        plt.figure(figsize=(6, 4.5))
-        plt.xlabel("time [s]")
-        plt.ylabel("glissement [%]")
-        plt.grid(True)
-        plt.title(" Glissement")
-        plt.plot(t_norm, glissement_f*100,'r:', label ="frontal")
-        plt.plot(t_norm, glissement_r*100,'b:', label ="arriere")
-        plt.legend()
+        for state in wsol:
+            Xef1.append(self.f_w.Xe + self.f_w.lf)
+            Yef1.append(self.f_w.Ye + self.f_w.Lw / 2)
+            Xer1.append(self.r_w.Xe - self.r_w.lr)
+            Yer1.append(self.r_w.Ye + self.f_w.Lw / 2)
+            Xef2.append(self.f_w.Xe + self.f_w.lf)
+            Yef2.append(self.f_w.Ye - self.f_w.Lw / 2)
+            Xer2.append(self.r_w.Xe - self.r_w.lr)
+            Yer2.append(self.r_w.Ye - self.f_w.Lw / 2)
 
-        glissement_f_norm = np.zeros(len(t))
-        glissement_r_norm = np.zeros(len(t))
+        global glissement_r, glissement_f
+        dense_t = np.linspace(0, t[-1], len(glissement_f))
+        interp_function_f = interp1d(dense_t, glissement_f, kind='linear')
+        interp_function_r = interp1d(dense_t, glissement_r, kind='linear')
+        resampled_glissement_f = interp_function_f(t)
+        resampled_glissement_r = interp_function_r(t)
 
-        for i in range(len(t)):
-            glissement_f_norm[i] = glissement_f[i*steps_per_time_step]
-            glissement_r_norm[i] = glissement_r[i*steps_per_time_step]
-        # print(glissement_f)
-        # print(glissement_r)
-        
         with open(os.path.join('results',self.name,'sim.dat'), 'w') as f:
-            for t1, w1, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r in zip(t, wsol, Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2, throttle_values, delta_values, glissement_f_norm, glissement_r_norm):
+            for t1, w1, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r in zip(t, wsol, Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2, throttle_values, delta_values, resampled_glissement_f, resampled_glissement_r):
                 print(t1, w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], w1[7], xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r, file=f)
+
 
 class Wheel():
     def __init__(self, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters, max_steer):
@@ -123,112 +112,71 @@ class Wheel():
         self.throttle_command, self.t0_throttle, self.tf_throttle, self.throttle_type = throttle_parameters
         self.delta_command, self.t0_delta, self.tf_delta, self.delta_type = delta_parameters
         self.max_steer = max_steer
-        if self.lf == 0:
-            self.name = "r_w"
-        if self.lr == 0:
-            self.name = "f_w"
-        self.old_omega_r = 0
+        self.Xe = 0
+        self.Ye = 0
 
     def update_dugoff_forces(self, throttle, delta, psi_p, x_p, y_p):
-        omega = self.throttle2omega*throttle
+        omega = self.throttle2omega * throttle
         Vx = x_p
         Vy = y_p
         omega_r = self.r * omega
-        # print(f"omega: {omega}, Vx: {Vx}, Vy: {Vy}")
 
-        # if (throttle > 0.0001):
-        #     s = (omega_r - Vx) / abs(omega_r)
-        # if (throttle < 0.0001):
-        #     s = (omega_r - Vx)/ np.abs(Vx)
-        # else:
-        #     s = 0  # Avoid division by zero if omega_r is zero
-        
-        if np.round(self.old_omega_r,2) <= np.round(omega_r,2):
-            self.s = (self.r*omega - Vx)/(self.r*omega)
-            # print("Analise do comportamento, valor de s = ",s, " Valor de omega = ", omega, " Valor de vx = ", Vx)
-            print("s", s, "vx", Vx, "omega_r", self.r*omega, "old_omega_r", self.old_omega_r)
+        if np.round(omega_r, 2) > np.round(Vx, 2):
+            self.s = (omega_r - Vx) / (omega_r)
         else:
-            self.s = (self.r*omega - Vx)/np.abs(Vx)
-            # print("s", s, "vx", Vx, "omega_r", self.r*omega, "old_omega_r", self.old_omega_r)
+            self.s = (omega_r - Vx) / np.abs(Vx)
 
-        self.old_omega_r = omega_r
-        if(self.lr != 0):
-            signal = -1
-        elif(self.lf != 0):
-            signal = 1
+        if self.s == -1 or np.isneginf(self.s):
+            self.s = -0.99
+        if np.isnan(self.s) or np.isposinf(self.s):
+            self.s = 0.99
 
+        
+        # print("Vx:", Vx, "s:", self.s)
         numerador = Vy + self.lf * psi_p - self.lr * psi_p
-        # denominador = Vx + signal*self.Lw/2 * psi_p
         denominador = Vx
 
-        theta_V = np.arctan(numerador/denominador) 
-        if np.isnan(theta_V):
-            theta_V = 0
+        theta_V = np.arctan(numerador / denominador) if denominador != 0 else 0
         alpha = delta - theta_V
 
-        C_lambda = (self.mi * self.Fz*(1+s))/(2*np.sqrt((self.C_s*s)**2 + (self.C_alpha*np.tan(alpha)**2)))
-        if C_lambda < 1:
-            f_C_lambda = (2-C_lambda)*C_lambda
-        elif(C_lambda >= 1):
-            f_C_lambda = 1 
+        C_lambda = (self.mi * self.Fz * (1 + self.s)) / (2 * np.sqrt((self.C_s * self.s**2) + (self.C_alpha * np.tan(alpha)**2)))
+        f_C_lambda = (2 - C_lambda) * C_lambda if C_lambda < 1 else 1
 
-        Fxp = self.C_s *(s/(1+s))*f_C_lambda
-        Fyp = self.C_alpha*(np.tan(alpha)/(1+s))*f_C_lambda
+        Fxp = self.C_s * (self.s / (1 + self.s)) * f_C_lambda
+        Fyp = self.C_alpha * (np.tan(alpha) / (1 + self.s)) * f_C_lambda
 
-        self.Fx = Fxp*np.cos(delta) - Fyp*np.sin(delta)
-        self.Fy = Fxp*np.sin(delta) + Fyp*np.cos(delta)
+        self.Fx = Fxp * np.cos(delta) - Fyp * np.sin(delta)
+        self.Fy = Fxp * np.sin(delta) + Fyp * np.cos(delta)
 
-        return self.Fx, self.Fy, s
+        return self.Fx, self.Fy, self.s
 
-    def throttle(self,t):
+    def throttle(self, t):
         if self.throttle_type == "full":
-            return t*0 + 127
-        if self.throttle_type == "step":
-            if np.round(t,2) <  np.round(self.t0_throttle,2):
-                return t*0 + 0.00001
-            elif np.round(t,2) >=  np.round(self.t0_throttle,2) and np.round(t,2) < np.round(self.tf_throttle,2):
-                return t*0 + self.throttle_command
-            elif np.round(t,2) > np.round(self.tf_throttle,2):
-                return t*0 + 0.00001
+            return 127
+        elif self.throttle_type == "step":
+            if t < self.t0_throttle:
+                return t*0 + 0
+            elif self.t0_throttle <= t < self.tf_throttle:
+                return t*0 + self.throttle_command*(1/(1+np.exp(-10*t)))
             else:
-                return t*0 + 0.00001
-    # def throttle(self, t):
-    #     if self.throttle_type == "full":
-    #         return t*0 + 127
-    #     if self.throttle_type == "step":
-    #         # Ensure smooth ramp-up and ramp-down
-    #         ramp_up_duration = 0.5  # Duration for the throttle to increase
-    #         ramp_down_start = self.tf_throttle - ramp_up_duration  # Start decreasing before tf_throttle
-    #         if t < self.t0_throttle:
-    #             return 0.00001
-    #         elif t < self.t0_throttle + ramp_up_duration:
-    #             # Linearly increase from 0 to the throttle_command
-    #             return ((t - self.t0_throttle) / ramp_up_duration) * self.throttle_command
-    #         elif t < ramp_down_start:
-    #             return self.throttle_command
-    #         elif t < self.tf_throttle:
-    #             # Linearly decrease to 0
-    #             return ((self.tf_throttle - t) / ramp_up_duration) * self.throttle_command
-    #         else:
-    #             return 0.00001
-   
-    def delta(self,t):
+                return t*0 + 0
+
+    def delta(self, t):
         if self.delta_type == "straight":
-            return t*0 + 0
-        if self.delta_type == "step":
+            return t*0
+        elif self.delta_type == "step":
             if t < self.t0_delta:
                 return t*0 + 0
-            if t >= self.t0_delta and t < self.tf_delta:
-                return t*0 + self.delta_command
-            if t > self.tf_delta:
+            elif self.t0_delta <= t < self.tf_delta:
+                return t*0 + self.delta_command*(1/(1+np.exp(-10*t)))
+            else:
                 return t*0 + 0
 
-def vectorfield(t, w, coef):
+def vectorfield(t, w, vehicle):
     x, xp, y, yp, psi, psip, Xe, Ye = w
-    f_w, r_w, m, Iz = coef
+    f_w, r_w, m, Iz = vehicle.f_w, vehicle.r_w, vehicle.m, vehicle.Iz
 
-    delta = f_w.delta(t)
-    Fxf, Fyf, s_f = f_w.update_dugoff_forces(f_w.throttle(t), delta, psip, xp, yp)
+    Fxf, Fyf, s_f = f_w.update_dugoff_forces(f_w.throttle(t), f_w.delta(t), psip, xp, yp)
     Fxr, Fyr, s_r = r_w.update_dugoff_forces(r_w.throttle(t), 0.0, psip, xp, yp)
 
     global glissement_f, glissement_r
@@ -239,13 +187,14 @@ def vectorfield(t, w, coef):
     lr = r_w.lr
 
     f = [xp,
-            (Fxf + Fxr)/m + psip*yp,
-            yp,
-            (Fyf + Fyr)/m - psip*xp,
-            psip,
-            (lf*Fyf - lr*Fyr)/Iz,
-            xp*np.cos(psi)-yp*np.sin(psi),
-            xp*np.sin(psi)+yp*np.cos(psi)]
+         (Fxf + Fxr) / m + psip * yp,
+         yp,
+         (Fyf + Fyr) / m - psip * xp,
+         psip,
+         (lf * Fyf - lr * Fyr) / Iz,
+         xp * np.cos(psi) - yp * np.sin(psi),
+         xp * np.sin(psi) + yp * np.cos(psi)]
+
     return f
 
 def set_throttle(command, t0, tf, type):

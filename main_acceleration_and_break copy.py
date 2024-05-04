@@ -16,8 +16,8 @@ initial_time = 1.8
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar2.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
-mi = 0.59
-C_s = 0.1
+mi = 0.57
+C_s = 0.4545
 C_alpha = 0.9
 
 
