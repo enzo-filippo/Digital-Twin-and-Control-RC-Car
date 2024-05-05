@@ -278,7 +278,7 @@ def plot(x,y, labelx, labely):
     lw = 1
     plt.plot(x, y, 'b', linewidth=lw)
 
-def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_name_file):
+def comparison_plot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_name_file):
     vsimu = np.sqrt((xpsimu**2 + ypsimu**2))
     x_dif, _ = difference(xsimu,xreal)
     y_dif, _ = difference(ysimu,yreal)
@@ -299,7 +299,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
 
 
     plt.figure(figsize=(6, 4.5))
-    plt.xlabel("t [s]")
+    plt.xlabel("temps [s]")
     plt.ylabel("x [m]")
     plt.grid(True)
     plt.axis('equal')
@@ -310,7 +310,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.savefig('figures/'+name_figures+'_Comparison_X_axis.pdf')
 
     plt.figure(figsize=(6, 4.5))
-    plt.xlabel("t [s]")
+    plt.xlabel("temps [s]")
     plt.ylabel("y [m]")
     plt.grid(True)
     plt.axis('equal')
@@ -321,7 +321,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.savefig('figures/'+name_figures+'_Comparison_Y_axis.pdf')
 
     plt.figure(figsize=(6, 4.5))
-    plt.xlabel("t [s]")
+    plt.xlabel("temps [s]")
     plt.ylabel("error [m]")
     plt.grid(True)
     plt.axis('equal')
@@ -332,7 +332,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.savefig('figures/'+name_figures+'_Error_Position_X_and_Y.pdf')
 
     plt.figure(figsize=(6, 4.5))
-    plt.xlabel("t [s]")
+    plt.xlabel("temps [s]")
     plt.ylabel("v [m/s]")
     plt.grid(True)
     plt.axis('equal')
@@ -343,7 +343,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.savefig('figures/'+name_figures+'_Comparison_Speed.pdf')
 
     plt.figure(figsize=(6, 4.5))
-    plt.xlabel("t [s]")
+    plt.xlabel("temps [s]")
     plt.ylabel("error [m/s]")
     plt.grid(True)
     plt.axis('equal')
@@ -353,23 +353,23 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.savefig('figures/'+name_figures+'_Error_Speed.pdf')
 
     plt.figure(figsize=(6, 4.5))
-    plt.xlabel("throttle")
-    plt.ylabel("time [s]")
+    plt.ylabel("commande")
+    plt.xlabel("temps [s]")
     plt.grid(True)
-    plt.title(" Throttle input ")
+    plt.title("Commande d'accélérateur ")
     plt.plot(tsimu, tv,'r:')
     plt.savefig('figures/'+name_figures+'_Throttle.pdf')
 
     plt.figure(figsize=(6, 4.5))
-    plt.xlabel("delta")
-    plt.ylabel("time [s]")
+    plt.ylabel("commande")
+    plt.xlabel("temps [s]")
     plt.grid(True)
-    plt.title(" Delta input ")
+    plt.title("Commande de lacet")
     plt.plot(tsimu, dv,'r:')
     plt.savefig('figures/'+name_figures+'_Delta.pdf')
 
     plt.figure(figsize=(6, 4.5))
-    plt.xlabel("time [s]")
+    plt.xlabel("temps [s]")
     plt.ylabel("glissement [%]")
     plt.grid(True)
     plt.title(" Glissement")
