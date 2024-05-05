@@ -134,8 +134,6 @@ class Wheel():
         if np.isnan(self.s) or np.isposinf(self.s):
             self.s = 0.99
 
-        
-        # print("Vx:", Vx, "s:", self.s)
         numerador = Vy + self.lf * psi_p - self.lr * psi_p
         denominador = Vx
 
@@ -219,7 +217,7 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
     data = {}
     with open(os.path.join(exp_file_directory, file_name), 'r') as file:
         for line in file:
-            if line.strip():  # Ignora linhas em branco
+            if line.strip():
                 key, values = line.strip().split(':')
                 data[key.strip()] = list(map(float, values.split()))
     t = np.array(data['abscisse'])
@@ -250,15 +248,12 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
     vreal = v[position:]
     areal = a[position-1:]
 
-    #colocar modificacoes aqui
     t0 = treal[0]
     Xe0 = xreal[0]
     Ye0 = yreal[0]
     v0 = vreal[0]
     a0 = areal[0]
     psi0_tout_droit = np.arctan((yreal[-1] - yreal[0])/(xreal[-1]-xreal[0]))
-    # print("For the Y axis we have: y0 = ", yreal[0], " and yf = ", yreal[-1])
-    # print("For the X axis we have: x0 = ", xreal[0], " and xf = ", xreal[-1])
     return treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit
 
 def difference(sim_position, real_position):
@@ -382,28 +377,22 @@ def comparison_plot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, yps
 
 def run_animation( sim_file_directory, fps=30):
 
-    # Car parameters
-    lf = 0.047  # Distance from center of mass to front wheel
-    lr = 0.05   # Distance from center of mass to rear wheel
-    Lw = 0.03   # Half-axle distance from the center of mass to the wheels
-    car_length = lf+lr  # Estimated car length
-    car_width = 2 * Lw  # Car width is twice the half-axle distance
+    lf = 0.047  
+    lr = 0.05   
+    Lw = 0.03   
+    car_length = lf+lr 
+    car_width = 2 * Lw 
 
-    # Wheel dimensions
-    wheel_length = 0.02  # Length of each wheel (along the direction of the car)
-    wheel_width = 0.01  # Width of each wheel (perpendicular to the direction of the car)
+    wheel_length = 0.02
+    wheel_width = 0.01 
 
-    # Load data
     data = read_sim_file(sim_file_directory)
 
-    # Unpack your data
     (tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,
     xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r) = data
 
-    # Initialize the car body as a rectangle
     car_body = Rectangle((0, 0), car_length, car_width, angle=0, color='blue', alpha=0.7)
 
-    # Initialize rectangles for each wheel
     wheels = [Rectangle((0, 0), wheel_length, wheel_width, color='red', alpha=0.7) for _ in range(4)]
 
     fig, ax = plt.subplots(figsize=(10, 8))
@@ -411,20 +400,16 @@ def run_animation( sim_file_directory, fps=30):
     ax.set_ylim(np.minimum(np.min(Xe),np.min(Ye)) - 0.5, np.minimum(np.max(Xe),np.min(Ye)) + 0.5)
     ax.set_aspect('equal')
 
-    # Initialize the car body as a rectangle
     car_body = Rectangle((0, 0), car_length, car_width, angle=0, color='blue', alpha=0.7)
     ax.add_patch(car_body)
 
-    # Initialize rectangles for each wheel
     wheels = [Rectangle((0, 0), wheel_length, wheel_width, color='red', alpha=0.7) for _ in range(4)]
     for wheel in wheels:
         ax.add_patch(wheel)
 
-    # Trails for wheels
     trails = [ax.plot([], [], 'k:', linewidth=1.5)[0] for _ in range(4)]
-    trail_length = 50  # Number of past positions to remember for the trail
+    trail_length = 50 
 
-    # Marker for the center of mass and time display
     center_of_mass, = ax.plot([], [], 'o', markersize=3)
     time_text = ax.text(0.05, 0.95, '', transform=ax.transAxes)
 
@@ -437,7 +422,6 @@ def run_animation( sim_file_directory, fps=30):
         return [car_body, center_of_mass] + wheels + trails + [time_text]
 
     def update(frame):
-        # Update car body and center of mass
         car_x = Xe[frame] - car_length / 2 * np.cos(psi[frame]) + car_width / 2 * np.sin(psi[frame])
         car_y = Ye[frame] - car_length / 2 * np.sin(psi[frame]) - car_width / 2 * np.cos(psi[frame])
         car_body.set_xy((car_x, car_y))
@@ -445,7 +429,6 @@ def run_animation( sim_file_directory, fps=30):
         center_of_mass.set_data(Xe[frame], Ye[frame])
         time_text.set_text(f'Time: {tsimu[frame]:.2f}s')
 
-        # Update wheel positions and orientations
         wheel_positions = np.array([
             [Xe[frame] + lf * np.cos(psi[frame]) - Lw * np.sin(psi[frame]),
              Ye[frame] + lf * np.sin(psi[frame]) + Lw * np.cos(psi[frame])],
@@ -462,7 +445,6 @@ def run_animation( sim_file_directory, fps=30):
             wheel.set_xy((wheel_center_x, wheel_center_y))
             wheel.angle = np.degrees(psi[frame] - dv[frame]) if i < 2 else np.degrees(psi[frame])
 
-            # Update trails
             xdata, ydata = trails[i].get_data()
             xdata = np.append(xdata, wheel_center_x)
             ydata = np.append(ydata, wheel_center_y)
@@ -473,42 +455,39 @@ def run_animation( sim_file_directory, fps=30):
 
         return [car_body, center_of_mass] + wheels + trails + [time_text]
 
-    interval = 1000 / fps  # Interval in milliseconds
+    interval = 1000 / fps  
     ani = FuncAnimation(fig, update, frames=len(tsimu), init_func=init, blit=True, interval=interval)
     plt.show()
 
 def run_all_animations(sim_file_directory, fps=30):
 
     save_path = "results/"+sim_file_directory+"/animation.mp4"
-    # Load your data
+
     data = read_sim_file(sim_file_directory)
     (tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r) = data
 
 
-    # Define car parameters
-    lf = 0.047  # Front wheel to center of mass
-    lr = 0.05   # Rear wheel to center of mass
-    Lw = 0.03   # Half-axle distance
+    lf = 0.047  
+    lr = 0.05   
+    Lw = 0.03   
     car_length = lf + lr
     car_width = 2 * Lw
     wheel_length = 0.04
     wheel_width = 0.02
 
-    # Setup figure and subplots
     fig = plt.figure(figsize=(16, 9))
     gs = GridSpec(4, 3, figure=fig)
 
-    # Create subplots for other data
-    car_ax = fig.add_subplot(gs[0:4, 0:2])  # Large subplot for the car animation
+    
+    car_ax = fig.add_subplot(gs[0:4, 0:2]) 
     car_ax.set_xlim(np.min(Xe) - 0.1, np.max(Xe) + 0.1)
     car_ax.set_ylim(np.min(Ye) - 0.1, np.max(Ye) + 0.1)
     car_ax.set_aspect('equal')
-    sf_ax = fig.add_subplot(gs[0, 2])     # Small subplots for other data
+    sf_ax = fig.add_subplot(gs[0, 2])    
     velocity_ax = fig.add_subplot(gs[1, 2])
     dv_ax = fig.add_subplot(gs[2, 2])
     tv_ax = fig.add_subplot(gs[3, 2])
 
-    # Initialize car animation elements based on your setup
     colors = ["r", "g","b", "y"]
     car_body = Rectangle((0, 0), car_length, car_width, angle=0, color='black')
     wheels = [Rectangle((0, 0), wheel_length, wheel_width, color=colors[i], alpha=0.7) for i in range(4)]
@@ -520,14 +499,12 @@ def run_all_animations(sim_file_directory, fps=30):
     for wheel in wheels:
         car_ax.add_patch(wheel)
 
-    # Prepare lines for other plots
     sf_line, = sf_ax.plot([], [], 'b-')
     velocity = np.sqrt(xpsimu**2 + ypsimu**2)
     velocity_line, = velocity_ax.plot([], [], 'b-')
     dv_line, = dv_ax.plot([], [], 'b-')
     tv_line, = tv_ax.plot([], [], 'b-')
 
-    # Setup plot ranges
     sf_ax.set_xlim(min(tsimu), max(tsimu))
     sf_ax.set_ylim(min(s_f), max(s_f))
     velocity_ax.set_xlim(min(tsimu), max(tsimu))
@@ -543,7 +520,6 @@ def run_all_animations(sim_file_directory, fps=30):
     tv_ax.set_xlabel("Temps (s)")
     tv_ax.set_ylabel("Throttle")
 
-    # Initialize function
     def init():
         center_of_mass.set_data([], [])
         car_body.set_xy((-0.1, -0.1))
@@ -558,9 +534,7 @@ def run_all_animations(sim_file_directory, fps=30):
         tv_line.set_data([], [])
         return [car_body, center_of_mass] + wheels + trails + [time_text, sf_line, velocity_line, dv_line, tv_line]
 
-    # Update function for all plots
     def update(frame):
-        # Car position update
         car_x = Xe[frame] - car_length / 2 * np.cos(psi[frame]) + car_width / 2 * np.sin(psi[frame])
         car_y = Ye[frame] - car_length / 2 * np.sin(psi[frame]) - car_width / 2 * np.cos(psi[frame])
         car_body.set_xy((car_x, car_y))
@@ -568,7 +542,6 @@ def run_all_animations(sim_file_directory, fps=30):
         center_of_mass.set_data(Xe[frame], Ye[frame])
         time_text.set_text(f'Time: {tsimu[frame]:.2f}s')
 
-        # Update wheel positions and orientations
         wheel_positions = np.array([
             [Xe[frame] + lf * np.cos(psi[frame]) - Lw * np.sin(psi[frame]),
              Ye[frame] + lf * np.sin(psi[frame]) + Lw * np.cos(psi[frame])],
@@ -579,23 +552,20 @@ def run_all_animations(sim_file_directory, fps=30):
             [Xe[frame] - lr * np.cos(psi[frame]) + Lw * np.sin(psi[frame]),
              Ye[frame] - lr * np.sin(psi[frame]) - Lw * np.cos(psi[frame])]])
 
-        # Update wheel positions and orientations
         for i, wheel in enumerate(wheels):
             wheel_center_x = wheel_positions[i, 0] - wheel_length / 2 * np.cos(psi[frame]) + wheel_width / 2 * np.sin(psi[frame])
             wheel_center_y = wheel_positions[i, 1] - wheel_length / 2 * np.sin(psi[frame]) - wheel_width / 2 * np.cos(psi[frame])
             wheel.set_xy((wheel_center_x, wheel_center_y))
             wheel.angle = np.degrees(psi[frame]) + dv[frame] if i < 2 else np.degrees(psi[frame])
 
-            # Update trails
             xdata, ydata = trails[i].get_data()
             xdata = np.append(xdata, wheel_positions[i, 0])
             ydata = np.append(ydata,  wheel_positions[i, 1])
-            if len(xdata) > 50:  # Adjust trail length as needed
+            if len(xdata) > 50:
                 xdata = xdata[-50:]
                 ydata = ydata[-50:]
             trails[i].set_data(xdata, ydata)
 
-        # Update other plots
         sf_line.set_data(tsimu[:frame+1], s_f[:frame+1])
         velocity_line.set_data(tsimu[:frame+1], velocity[:frame+1])
         dv_line.set_data(tsimu[:frame+1], dv[:frame+1])
@@ -603,7 +573,6 @@ def run_all_animations(sim_file_directory, fps=30):
 
         return [car_body, center_of_mass] + wheels + trails + [time_text, sf_line, velocity_line, dv_line, tv_line]
 
-    # Create and start animation
     ani = FuncAnimation(fig, update, frames=len(tsimu), init_func=init, blit=True, interval=1000/fps)
     ani.save(save_path, writer='ffmpeg', fps=fps)
     plt.show()
