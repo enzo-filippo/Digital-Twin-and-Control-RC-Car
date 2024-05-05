@@ -4,7 +4,7 @@ import rccar2
 # Real data and simulation:
 throttle_real_command = 57
 
-sim_file_directory = "curva_t_255_d_20"
+sim_file_directory = str(throttle_real_command) + "break"
 exp_file_directory = "data"
 exp_file_name = "hyper_vitesse_ca_tourne_pas.txt"
 
@@ -16,9 +16,9 @@ initial_time = 1.8
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar2.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
-mi = 0.65
-C_s = 0.57
-C_alpha = 0.22
+mi = 0.7
+C_s = 0.61
+C_alpha = 0.27
 
 # Fixed Parameter values
 max_steer_angle = 30.0
@@ -29,7 +29,7 @@ lr = 0.05
 Lw = 0.0
 r = 0.024
 Fz = m*9.98/4
-throttle2omega = 0.054/r
+throttle2omega = 0.0547/r
 # throttle2omega = 0.0595/r
 
 # Simulation conditions
@@ -75,6 +75,7 @@ tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1,
 
 # PLOTS
 rccar2.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_file_name)
+rccar2.run_all_animations(sim_file_directory, fps=10)
 
 
 

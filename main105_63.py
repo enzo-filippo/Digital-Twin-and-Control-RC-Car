@@ -4,9 +4,9 @@ import rccar2
 throttle_real_command = 105
 delta_real_command = 63
 
-sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
 exp_file_name = str(throttle_real_command) + "-" + str(delta_real_command) + ".txt"
+sim_file_directory = str(throttle_real_command) + "-" + str(delta_real_command)
 
 # ODE Solver parameters - INPUTS FOR EVERY ANALYSIS
 abserr = 1.0e-8
@@ -72,5 +72,5 @@ voiture.run(tsim, ode_param)
 tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r = rccar2.read_sim_file(sim_file_directory)
 
 # PLOTS
-# rccar2.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_file_name)
-rccar2.run_animation('curva_t_255_d_20', fps=10)
+rccar2.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_file_name)
+# rccar2.run_all_animations(sim_file_directory, fps=10)

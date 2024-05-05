@@ -1,67 +1,59 @@
 import numpy as np
-from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import os
+from scipy.interpolate import interp1d
+from matplotlib.animation import FuncAnimation
+from matplotlib.patches import Rectangle
+from matplotlib.gridspec import GridSpec
 
 glissement_f = np.array([])
 glissement_r = np.array([])
 
-# non-linear lateral bicycle model
-class NonLinearBycicle():
+class NonLinearBicycle():
     def __init__(self, name, parameters, val_0):
         self.name = name
-        self.max_steer = np.radians(parameters[0])   
-        self.m = parameters[1]             
-        self.Iz = parameters[2]            
-        self.lf = parameters[3]
-        self.lr = parameters[4]
-        self.Lw = parameters[5]
-        self.r = parameters[6]
-        self.mi = parameters[7]
-        self.C_s = parameters[8]
-        self.C_alpha = parameters[9]
-        self.Fz = parameters[10]
-        self.throttle2omega = parameters[11]
-        self.throttle_parameters = parameters[12]
-        self.delta_parameters = parameters[13]
+        self.parameters = parameters
+        self.val_0 = val_0
+        self.setup_parameters()
 
-        self.x = val_0[0]
-        self.y = val_0[1]
-        self.psi = val_0[2]
-        self.x_p = val_0[3]
-        self.y_p = val_0[4]
-        self.psi_p = val_0[5]
-        self.x_pp = val_0[6]
-        self.y_pp = val_0[7]
-        self.psi_pp = val_0[8]
-        self.Xe = val_0[9]
-        self.Ye = val_0[10]
-        self.delta_p = val_0[11]
+    def setup_parameters(self):
+        params = self.parameters
+        self.max_steer = np.radians(params[0])   
+        self.m = params[1]             
+        self.Iz = params[2]            
+        self.lf = params[3]
+        self.lr = params[4]
+        self.Lw = params[5]
+        self.r = params[6]
+        self.mi = params[7]
+        self.C_s = params[8]
+        self.C_alpha = params[9]
+        self.Fz = params[10]
+        self.throttle2omega = params[11]
+        self.throttle_parameters = params[12]
+        self.delta_parameters = params[13]
 
-        self.f_w = wheel(self.lf, 0.0, self.mi, self.r, self.mi, self.C_s, self.C_alpha, self.Fz, 
-                         self.throttle2omega, self.throttle_parameters, self.delta_parameters, self.max_steer)
-        self.r_w = wheel(0.0, self.lr, self.mi, self.r, self.mi, self.C_s, self.C_alpha, self.Fz, 
-                         self.throttle2omega, self.throttle_parameters, self.delta_parameters, self.max_steer)
+        self.f_w = Wheel(self.lf, 0.0, self.Lw, self.r, self.mi, self.C_s, self.C_alpha, self.Fz, self.throttle2omega, self.throttle_parameters, self.delta_parameters, self.max_steer)
+        self.r_w = Wheel(0.0, self.lr, self.Lw, self.r, self.mi, self.C_s, self.C_alpha, self.Fz, self.throttle2omega, self.throttle_parameters, self.delta_parameters, self.max_steer)
 
         if not os.path.exists('results'):
             os.makedirs('results')
-        if not os.path.exists(os.path.join('results',self.name)):
-            os.makedirs(os.path.join('results',self.name))
+        if not os.path.exists(os.path.join('results', self.name)):
+            os.makedirs(os.path.join('results', self.name))
 
     def run(self, t, ode_p):
-        abserr, relerr, _, _ = ode_p
-        coef = [self.f_w, self.r_w, self.m, self.Iz]
-        val_0 = [self.x, self.x_p, self.y, self.y_p, self.psi, self.psi_p, self.Xe, self.Ye]
+        abserr, relerr = ode_p[:2]
+        t_span = (t[0], t[-1])
 
-        # Call the ODE solver.
-        wsol = odeint(vectorfield, val_0, t, args=(coef,),atol=abserr, rtol=relerr)
-        
-        self.f_w.Xe = wsol[:,6] + self.f_w.lf*np.cos(wsol[:,4])
-        self.f_w.Ye = wsol[:,7] + self.f_w.lf*np.sin(wsol[:,4])
-        self.r_w.Xe = wsol[:,6] - self.r_w.lr*np.cos(wsol[:,4])
-        self.r_w.Ye = wsol[:,7] - self.r_w.lr*np.sin(wsol[:,4])
-        
+        sol = solve_ivp(lambda t, w: vectorfield(t, w, self),
+                        t_span, self.val_0, t_eval=t, atol=abserr, rtol=relerr, method='RK45')
+
+        if not sol.success:
+            raise RuntimeError("ODE solver failed to find a solution")
+
+        wsol = sol.y.T
+
         x = wsol[0] 
         xp = wsol[1] 
         y = wsol[2] 
@@ -85,13 +77,31 @@ class NonLinearBycicle():
             throttle_values[i] = self.f_w.throttle(t[i])
             delta_values[i] = self.f_w.delta(t[i])
 
-        global glissement_f, glissement_r
+        Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2 = [], [], [], [], [], [], [], []
+
+        for state in wsol:
+            Xef1.append(self.f_w.Xe + self.f_w.lf)
+            Yef1.append(self.f_w.Ye + self.f_w.Lw / 2)
+            Xer1.append(self.r_w.Xe - self.r_w.lr)
+            Yer1.append(self.r_w.Ye + self.f_w.Lw / 2)
+            Xef2.append(self.f_w.Xe + self.f_w.lf)
+            Yef2.append(self.f_w.Ye - self.f_w.Lw / 2)
+            Xer2.append(self.r_w.Xe - self.r_w.lr)
+            Yer2.append(self.r_w.Ye - self.f_w.Lw / 2)
+
+        global glissement_r, glissement_f
+        dense_t = np.linspace(0, t[-1], len(glissement_f))
+        interp_function_f = interp1d(dense_t, glissement_f, kind='linear')
+        interp_function_r = interp1d(dense_t, glissement_r, kind='linear')
+        resampled_glissement_f = interp_function_f(t)
+        resampled_glissement_r = interp_function_r(t)
 
         with open(os.path.join('results',self.name,'sim.dat'), 'w') as f:
-            for t1, w1, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r in zip(t, wsol, Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2, throttle_values, delta_values, glissement_f, glissement_r):
+            for t1, w1, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r in zip(t, wsol, Xef1, Yef1, Xer1, Yer1, Xef2, Yef2, Xer2, Yer2, throttle_values, delta_values, resampled_glissement_f, resampled_glissement_r):
                 print(t1, w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], w1[7], xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r, file=f)
 
-class wheel():
+
+class Wheel():
     def __init__(self, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters, max_steer):
         self.lf = lf
         self.lr = lr
@@ -105,193 +115,96 @@ class wheel():
         self.throttle_command, self.t0_throttle, self.tf_throttle, self.throttle_type = throttle_parameters
         self.delta_command, self.t0_delta, self.tf_delta, self.delta_type = delta_parameters
         self.max_steer = max_steer
-        if self.lf == 0:
-            self.name = "r_w"
-        if self.lr == 0:
-            self.name = "f_w"
-
+        self.Xe = 0
+        self.Ye = 0
 
     def update_dugoff_forces(self, throttle, delta, psi_p, x_p, y_p):
-        omega = self.throttle2omega*throttle
+        omega = self.throttle2omega * throttle
         Vx = x_p
         Vy = y_p
-        
         omega_r = self.r * omega
-        print(f"omega: {omega}, Vx: {Vx}, Vy: {Vy}")
 
-        # if (throttle > 0.0001):
-        #     s = (omega_r - Vx) / abs(omega_r)
-        # if (throttle < 0.0001):
-        #     s = (omega_r - Vx)/ np.abs(Vx)
-        # else:
-        #     s = 0  # Avoid division by zero if omega_r is zero
+        if np.round(omega_r, 2) > np.round(Vx, 2):
+            self.s = (omega_r - Vx) / (omega_r)
+        else:
+            self.s = (omega_r - Vx) / np.abs(Vx)
+
+        if self.s == -1 or np.isneginf(self.s):
+            self.s = -0.99
+        if np.isnan(self.s) or np.isposinf(self.s):
+            self.s = 0.99
+
         
-        if throttle > 0.00001:
-            s = (self.r*omega - Vx)/(self.r*omega)
-            # print("Analise do comportamento, valor de s = ",s, " Valor de omega = ", omega, " Valor de vx = ", Vx)
-        if throttle <= 0.00001:
-            s = (self.r*omega - Vx)/np.abs(Vx)
-
-        if(self.lr != 0):
-            signal = -1
-        elif(self.lf != 0):
-            signal = 1
-
+        # print("Vx:", Vx, "s:", self.s)
         numerador = Vy + self.lf * psi_p - self.lr * psi_p
-        # denominador = Vx + signal*self.Lw/2 * psi_p
         denominador = Vx
 
-        theta_V = np.arctan(numerador/denominador) 
-        if np.isnan(theta_V):
-            theta_V = 0
+        theta_V = np.arctan(numerador / denominador) if denominador != 0 else 0
         alpha = delta - theta_V
 
-        C_lambda = (self.mi * self.Fz*(1+s))/(2*np.sqrt((self.C_s*s)**2 + (self.C_alpha*np.tan(alpha)**2)))
-        if C_lambda < 1:
-            f_C_lambda = (2-C_lambda)*C_lambda
-        elif(C_lambda >= 1):
-            f_C_lambda = 1 
+        C_lambda = (self.mi * self.Fz * (1 + self.s)) / (2 * np.sqrt((self.C_s * self.s**2) + (self.C_alpha * np.tan(alpha)**2)))
+        f_C_lambda = (2 - C_lambda) * C_lambda if C_lambda < 1 else 1
 
-        Fxp = self.C_s *(s/(1+s))*f_C_lambda
-        Fyp = self.C_alpha*(np.tan(alpha)/(1+s))*f_C_lambda
+        Fxp = self.C_s * (self.s / (1 + self.s)) * f_C_lambda
+        Fyp = self.C_alpha * (np.tan(alpha) / (1 + self.s)) * f_C_lambda
 
-        self.Fx = Fxp*np.cos(delta) - Fyp*np.sin(delta)
-        self.Fy = Fxp*np.sin(delta) + Fyp*np.cos(delta)
+        self.Fx = Fxp * np.cos(delta) - Fyp * np.sin(delta)
+        self.Fy = Fxp * np.sin(delta) + Fyp * np.cos(delta)
 
-        return s
+        return self.Fx, self.Fy, self.s
 
-    def throttle(self,t):
+    def throttle(self, t):
         if self.throttle_type == "full":
-            return t*0 + 127
-        if self.throttle_type == "step":
+            return 127
+        elif self.throttle_type == "step":
             if t < self.t0_throttle:
-                return t*0 + 0.00001
-            if t >= self.t0_throttle and t < self.tf_throttle:
-                return t*0 + self.throttle_command
-            if t > self.tf_throttle:
-                return t*0 + 0.00001
-    # def throttle(self, t):
-    #     if self.throttle_type == "full":
-    #         return t*0 + 127
-    #     if self.throttle_type == "step":
-    #         # Ensure smooth ramp-up and ramp-down
-    #         ramp_up_duration = 0.5  # Duration for the throttle to increase
-    #         ramp_down_start = self.tf_throttle - ramp_up_duration  # Start decreasing before tf_throttle
-    #         if t < self.t0_throttle:
-    #             return 0.00001
-    #         elif t < self.t0_throttle + ramp_up_duration:
-    #             # Linearly increase from 0 to the throttle_command
-    #             return ((t - self.t0_throttle) / ramp_up_duration) * self.throttle_command
-    #         elif t < ramp_down_start:
-    #             return self.throttle_command
-    #         elif t < self.tf_throttle:
-    #             # Linearly decrease to 0
-    #             return ((self.tf_throttle - t) / ramp_up_duration) * self.throttle_command
-    #         else:
-    #             return 0.00001
-   
-    def delta(self,t):
+                return t*0 + 0
+            elif self.t0_throttle <= t < self.tf_throttle:
+                return t*0 + self.throttle_command*(1/(1+np.exp(-1.5*t)))
+            else:
+                return t*0 + 0
+
+    def delta(self, t):
         if self.delta_type == "straight":
-            return t*0 + 0
-        if self.delta_type == "step":
+            return t*0
+        elif self.delta_type == "step":
             if t < self.t0_delta:
                 return t*0 + 0
-            if t >= self.t0_delta and t < self.tf_delta:
-                return t*0 + self.delta_command
-            if t > self.tf_delta:
+            elif self.t0_delta <= t < self.tf_delta:
+                return t*0 + self.delta_command*(1/(1+np.exp(-1.5*t)))
+            else:
                 return t*0 + 0
 
-def vectorfield(w, t, coef):
-    """
-    Defines the differential equations for the coupled system.
-
-    Arguments:
-        w :  vector of the state variables:
-                  w = [x_p, x_pp, y_p, y_pp, psi_p, psi_pp, Xe_p, Ye_p]
-        t :  counter
-        p :  vector of the parameters:
-                  p = [Fxf, Fxr, Fyf, Fyr, lf, lr, m, Iz]
-    """
+def vectorfield(t, w, vehicle):
     x, xp, y, yp, psi, psip, Xe, Ye = w
-    f_w, r_w, m, Iz = coef
+    f_w, r_w, m, Iz = vehicle.f_w, vehicle.r_w, vehicle.m, vehicle.Iz
 
-    delta = f_w.delta(t)
-    s_f = f_w.update_dugoff_forces(f_w.throttle(t), delta, psip, xp, yp)
-    s_r = r_w.update_dugoff_forces(r_w.throttle(t), 0.0, psip, xp, yp)
+    Fxf, Fyf, s_f = f_w.update_dugoff_forces(f_w.throttle(t), f_w.delta(t), psip, xp, yp)
+    Fxr, Fyr, s_r = r_w.update_dugoff_forces(r_w.throttle(t), 0.0, psip, xp, yp)
+
     global glissement_f, glissement_r
-    glissement_f = np.append(glissement_f,s_f)
-    glissement_r = np.append(glissement_r,s_r)
+    glissement_f = np.append(glissement_f, s_f)
+    glissement_r = np.append(glissement_r, s_r)
 
-    Fxf = f_w.Fx
-    Fyf = f_w.Fy
-    Fxr = r_w.Fx
-    Fyr = r_w.Fy
     lf = f_w.lf
     lr = r_w.lr
 
-    # Create f = (x',xp',y',yp',psi',psip', Xe', Ye'):
     f = [xp,
-         (Fxf + Fxr)/m + psip*yp,
+         (Fxf + Fxr) / m + psip * yp,
          yp,
-         (Fyf + Fyr)/m - psip*xp,
+         (Fyf + Fyr) / m - psip * xp,
          psip,
-         (lf*Fyf - lr*Fyr)/Iz,
-         xp*np.cos(psi)-yp*np.sin(psi),
-         xp*np.sin(psi)+yp*np.cos(psi)]
-    
+         (lf * Fyf - lr * Fyr) / Iz,
+         xp * np.cos(psi) - yp * np.sin(psi),
+         xp * np.sin(psi) + yp * np.cos(psi)]
+
     return f
-    
+
 def set_throttle(command, t0, tf, type):
-    throttle_parameters = [command, t0, tf, type]
-    return throttle_parameters
+    return [command, t0, tf, type]
 
 def set_delta(command, t0, tf, type):
-    delta_parameters = [command, t0, tf, type]
-    return delta_parameters
-
-def anim(sim_file_directory, anim_fps):
-
-        def init():
-            lines['cg'].set_data([], [])
-            lines['fw1'].set_data([], [])
-            lines['rw1'].set_data([], [])
-            lines['fw2'].set_data([], [])
-            lines['rw2'].set_data([], [])
-            return lines.values()
-
-        def animate(i):
-            lines['cg'].set_data(x[i], y[i])
-            lines['fw1'].set_data(xef1[i], yef1[i])
-            lines['rw1'].set_data(xer1[i], yer1[i])
-            lines['fw2'].set_data(xef2[i], yef2[i])
-            lines['rw2'].set_data(xer2[i], yer2[i])
-            lines['cgrastro'].set_data(x[:i], y[:i])
-            lines['fwrastro1'].set_data(xef1[:i], yef1[:i])
-            lines['rwrastro1'].set_data(xer1[:i], yer1[:i])
-            time_legend.set_text('Time: {:.2f}'.format(t[i]))
-            return (*lines.values(), time_legend)
-
-
-        t, x, xpsimu, y, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r = read_sim_file(sim_file_directory)
-
-        fig, ax = plt.subplots()
-        ax.set_xlim(np.min(np.concatenate((x,y)))-0.1, np.max(np.concatenate((x,y)))+0.1)  # Adjust x-axis limits as needed
-        ax.set_ylim(np.min(np.concatenate((x,y)))-0.1, np.max(np.concatenate((x,y)))+0.1)  # Adjust y-axis limits as needed
-        ax.set_aspect('equal')
-        lines = {'cg': ax.plot([], [], 'bo', color='blue', label='CG')[0],
-                'fw': ax.plot([], [], 'ro', color='red', label='FW')[0],
-                'rw': ax.plot([], [], 'go', color='green', label='RW')[0],
-                'cgrastro': ax.plot([], [], 'b-', color='blue', label='CG')[0],
-                'fwrastro': ax.plot([], [], 'r:', color='red')[0],
-                'rwrastro': ax.plot([], [], 'g:', color='green')[0]}
-        time_legend = ax.text(0.02, 0.98, '', transform=ax.transAxes, va='top', ha='left')
-
-        # Create the animation
-        ani = FuncAnimation(fig, animate, frames=len(t), init_func=init, blit=True, interval = anim_fps)
-        ax.legend()
-
-        # ani.save(os.path.join('results','curva_t_255_d_20','anim.mp4'), fps=30, extra_args=['-vcodec', 'libx264'])  
-        plt.show()
+    return [command, t0, tf, type]
 
 def read_sim_file(sim_file_directory):
     t, x, xp, y, yp, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r = np.loadtxt(os.path.join('results',sim_file_directory,'sim.dat'), unpack=True)
@@ -344,8 +257,8 @@ def read_exp_file(exp_file_directory, file_name, initial_time):
     v0 = vreal[0]
     a0 = areal[0]
     psi0_tout_droit = np.arctan((yreal[-1] - yreal[0])/(xreal[-1]-xreal[0]))
-    print("For the Y axis we have: y0 = ", yreal[0], " and yf = ", yreal[-1])
-    print("For the X axis we have: x0 = ", xreal[0], " and xf = ", xreal[-1])
+    # print("For the Y axis we have: y0 = ", yreal[0], " and yf = ", yreal[-1])
+    # print("For the X axis we have: x0 = ", xreal[0], " and xf = ", xreal[-1])
     return treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit
 
 def difference(sim_position, real_position):
@@ -372,8 +285,7 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     v_dif, _ = difference(vsimu[:-2],vreal[1:])
 
     name_figures = exp_name_file.replace(".txt","")
-
-    
+   
     plt.figure(figsize=(6, 4.5))
     plt.xlabel("y [m]")
     plt.ylabel("x [m]")
@@ -466,4 +378,232 @@ def ComparisonPlot(treal, xreal, yreal, vreal, tsimu, xsimu, ysimu, xpsimu, ypsi
     plt.legend()
     plt.savefig('figures/'+name_figures+'_glissement.pdf')
 
+    plt.show()
+
+def run_animation( sim_file_directory, fps=30):
+
+    # Car parameters
+    lf = 0.047  # Distance from center of mass to front wheel
+    lr = 0.05   # Distance from center of mass to rear wheel
+    Lw = 0.03   # Half-axle distance from the center of mass to the wheels
+    car_length = lf+lr  # Estimated car length
+    car_width = 2 * Lw  # Car width is twice the half-axle distance
+
+    # Wheel dimensions
+    wheel_length = 0.02  # Length of each wheel (along the direction of the car)
+    wheel_width = 0.01  # Width of each wheel (perpendicular to the direction of the car)
+
+    # Load data
+    data = read_sim_file(sim_file_directory)
+
+    # Unpack your data
+    (tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,
+    xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r) = data
+
+    # Initialize the car body as a rectangle
+    car_body = Rectangle((0, 0), car_length, car_width, angle=0, color='blue', alpha=0.7)
+
+    # Initialize rectangles for each wheel
+    wheels = [Rectangle((0, 0), wheel_length, wheel_width, color='red', alpha=0.7) for _ in range(4)]
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+    ax.set_xlim(np.minimum(np.min(Xe),np.min(Ye)) - 0.5, np.minimum(np.max(Xe),np.min(Ye)) + 0.5)
+    ax.set_ylim(np.minimum(np.min(Xe),np.min(Ye)) - 0.5, np.minimum(np.max(Xe),np.min(Ye)) + 0.5)
+    ax.set_aspect('equal')
+
+    # Initialize the car body as a rectangle
+    car_body = Rectangle((0, 0), car_length, car_width, angle=0, color='blue', alpha=0.7)
+    ax.add_patch(car_body)
+
+    # Initialize rectangles for each wheel
+    wheels = [Rectangle((0, 0), wheel_length, wheel_width, color='red', alpha=0.7) for _ in range(4)]
+    for wheel in wheels:
+        ax.add_patch(wheel)
+
+    # Trails for wheels
+    trails = [ax.plot([], [], 'k:', linewidth=1.5)[0] for _ in range(4)]
+    trail_length = 50  # Number of past positions to remember for the trail
+
+    # Marker for the center of mass and time display
+    center_of_mass, = ax.plot([], [], 'o', markersize=3)
+    time_text = ax.text(0.05, 0.95, '', transform=ax.transAxes)
+
+    def init():
+        car_body.set_xy((-0.1, -0.1))
+        center_of_mass.set_data([], [])
+        for trail in trails:
+            trail.set_data([], [])
+        time_text.set_text('')
+        return [car_body, center_of_mass] + wheels + trails + [time_text]
+
+    def update(frame):
+        # Update car body and center of mass
+        car_x = Xe[frame] - car_length / 2 * np.cos(psi[frame]) + car_width / 2 * np.sin(psi[frame])
+        car_y = Ye[frame] - car_length / 2 * np.sin(psi[frame]) - car_width / 2 * np.cos(psi[frame])
+        car_body.set_xy((car_x, car_y))
+        car_body.angle = np.degrees(psi[frame])
+        center_of_mass.set_data(Xe[frame], Ye[frame])
+        time_text.set_text(f'Time: {tsimu[frame]:.2f}s')
+
+        # Update wheel positions and orientations
+        wheel_positions = np.array([
+            [Xe[frame] + lf * np.cos(psi[frame]) - Lw * np.sin(psi[frame]),
+             Ye[frame] + lf * np.sin(psi[frame]) + Lw * np.cos(psi[frame])],
+            [Xe[frame] + lf * np.cos(psi[frame]) + Lw * np.sin(psi[frame]),
+             Ye[frame] + lf * np.sin(psi[frame]) - Lw * np.cos(psi[frame])],
+            [Xe[frame] - lr * np.cos(psi[frame]) - Lw * np.sin(psi[frame]),
+             Ye[frame] - lr * np.sin(psi[frame]) + Lw * np.cos(psi[frame])],
+            [Xe[frame] - lr * np.cos(psi[frame]) + Lw * np.sin(psi[frame]),
+             Ye[frame] - lr * np.sin(psi[frame]) - Lw * np.cos(psi[frame])]
+        ])
+        for i, wheel in enumerate(wheels):
+            wheel_center_x = wheel_positions[i, 0] - wheel_length / 2 * np.cos(psi[frame]) + wheel_width / 2 * np.sin(psi[frame])
+            wheel_center_y = wheel_positions[i, 1] - wheel_length / 2 * np.sin(psi[frame]) - wheel_width / 2 * np.cos(psi[frame])
+            wheel.set_xy((wheel_center_x, wheel_center_y))
+            wheel.angle = np.degrees(psi[frame] - dv[frame]) if i < 2 else np.degrees(psi[frame])
+
+            # Update trails
+            xdata, ydata = trails[i].get_data()
+            xdata = np.append(xdata, wheel_center_x)
+            ydata = np.append(ydata, wheel_center_y)
+            if len(xdata) > trail_length:
+                xdata = xdata[-trail_length:]
+                ydata = ydata[-trail_length:]
+            trails[i].set_data(xdata, ydata)
+
+        return [car_body, center_of_mass] + wheels + trails + [time_text]
+
+    interval = 1000 / fps  # Interval in milliseconds
+    ani = FuncAnimation(fig, update, frames=len(tsimu), init_func=init, blit=True, interval=interval)
+    plt.show()
+
+def run_all_animations(sim_file_directory, fps=30):
+
+    save_path = "results/"+sim_file_directory+"/animation.mp4"
+    # Load your data
+    data = read_sim_file(sim_file_directory)
+    (tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye, xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r) = data
+
+
+    # Define car parameters
+    lf = 0.047  # Front wheel to center of mass
+    lr = 0.05   # Rear wheel to center of mass
+    Lw = 0.03   # Half-axle distance
+    car_length = lf + lr
+    car_width = 2 * Lw
+    wheel_length = 0.04
+    wheel_width = 0.02
+
+    # Setup figure and subplots
+    fig = plt.figure(figsize=(16, 9))
+    gs = GridSpec(4, 3, figure=fig)
+
+    # Create subplots for other data
+    car_ax = fig.add_subplot(gs[0:4, 0:2])  # Large subplot for the car animation
+    car_ax.set_xlim(np.min(Xe) - 0.1, np.max(Xe) + 0.1)
+    car_ax.set_ylim(np.min(Ye) - 0.1, np.max(Ye) + 0.1)
+    car_ax.set_aspect('equal')
+    sf_ax = fig.add_subplot(gs[0, 2])     # Small subplots for other data
+    velocity_ax = fig.add_subplot(gs[1, 2])
+    dv_ax = fig.add_subplot(gs[2, 2])
+    tv_ax = fig.add_subplot(gs[3, 2])
+
+    # Initialize car animation elements based on your setup
+    colors = ["r", "g","b", "y"]
+    car_body = Rectangle((0, 0), car_length, car_width, angle=0, color='black')
+    wheels = [Rectangle((0, 0), wheel_length, wheel_width, color=colors[i], alpha=0.7) for i in range(4)]
+    trails = [car_ax.plot([], [], colors[i], linewidth=1)[0] for i in range(4)]
+    center_of_mass, = car_ax.plot([], [], 'wo', markersize=2)
+    time_text = car_ax.text(0.05, 0.95, '', transform=car_ax.transAxes)
+
+    car_ax.add_patch(car_body)
+    for wheel in wheels:
+        car_ax.add_patch(wheel)
+
+    # Prepare lines for other plots
+    sf_line, = sf_ax.plot([], [], 'b-')
+    velocity = np.sqrt(xpsimu**2 + ypsimu**2)
+    velocity_line, = velocity_ax.plot([], [], 'b-')
+    dv_line, = dv_ax.plot([], [], 'b-')
+    tv_line, = tv_ax.plot([], [], 'b-')
+
+    # Setup plot ranges
+    sf_ax.set_xlim(min(tsimu), max(tsimu))
+    sf_ax.set_ylim(min(s_f), max(s_f))
+    velocity_ax.set_xlim(min(tsimu), max(tsimu))
+    velocity_ax.set_ylim(min(velocity), max(velocity))
+    dv_ax.set_xlim(min(tsimu), max(tsimu))
+    dv_ax.set_ylim(min(dv), max(dv))
+    tv_ax.set_xlim(min(tsimu), max(tsimu))
+    tv_ax.set_ylim(min(tv), max(tv))
+
+    sf_ax.set_ylabel("Glissment")
+    velocity_ax.set_ylabel("Vitesse (m/s)")
+    dv_ax.set_ylabel("Delta (degrees)")
+    tv_ax.set_xlabel("Temps (s)")
+    tv_ax.set_ylabel("Throttle")
+
+    # Initialize function
+    def init():
+        center_of_mass.set_data([], [])
+        car_body.set_xy((-0.1, -0.1))
+        for wheel in wheels:
+            wheel.set_xy((-0.1, -0.1))
+        for trail in trails:
+            trail.set_data([], [])
+        time_text.set_text('')
+        sf_line.set_data([], [])
+        velocity_line.set_data([], [])
+        dv_line.set_data([], [])
+        tv_line.set_data([], [])
+        return [car_body, center_of_mass] + wheels + trails + [time_text, sf_line, velocity_line, dv_line, tv_line]
+
+    # Update function for all plots
+    def update(frame):
+        # Car position update
+        car_x = Xe[frame] - car_length / 2 * np.cos(psi[frame]) + car_width / 2 * np.sin(psi[frame])
+        car_y = Ye[frame] - car_length / 2 * np.sin(psi[frame]) - car_width / 2 * np.cos(psi[frame])
+        car_body.set_xy((car_x, car_y))
+        car_body.angle = np.degrees(psi[frame])
+        center_of_mass.set_data(Xe[frame], Ye[frame])
+        time_text.set_text(f'Time: {tsimu[frame]:.2f}s')
+
+        # Update wheel positions and orientations
+        wheel_positions = np.array([
+            [Xe[frame] + lf * np.cos(psi[frame]) - Lw * np.sin(psi[frame]),
+             Ye[frame] + lf * np.sin(psi[frame]) + Lw * np.cos(psi[frame])],
+            [Xe[frame] + lf * np.cos(psi[frame]) + Lw * np.sin(psi[frame]),
+             Ye[frame] + lf * np.sin(psi[frame]) - Lw * np.cos(psi[frame])],
+            [Xe[frame] - lr * np.cos(psi[frame]) - Lw * np.sin(psi[frame]),
+             Ye[frame] - lr * np.sin(psi[frame]) + Lw * np.cos(psi[frame])],
+            [Xe[frame] - lr * np.cos(psi[frame]) + Lw * np.sin(psi[frame]),
+             Ye[frame] - lr * np.sin(psi[frame]) - Lw * np.cos(psi[frame])]])
+
+        # Update wheel positions and orientations
+        for i, wheel in enumerate(wheels):
+            wheel_center_x = wheel_positions[i, 0] - wheel_length / 2 * np.cos(psi[frame]) + wheel_width / 2 * np.sin(psi[frame])
+            wheel_center_y = wheel_positions[i, 1] - wheel_length / 2 * np.sin(psi[frame]) - wheel_width / 2 * np.cos(psi[frame])
+            wheel.set_xy((wheel_center_x, wheel_center_y))
+            wheel.angle = np.degrees(psi[frame]) + dv[frame] if i < 2 else np.degrees(psi[frame])
+
+            # Update trails
+            xdata, ydata = trails[i].get_data()
+            xdata = np.append(xdata, wheel_positions[i, 0])
+            ydata = np.append(ydata,  wheel_positions[i, 1])
+            if len(xdata) > 50:  # Adjust trail length as needed
+                xdata = xdata[-50:]
+                ydata = ydata[-50:]
+            trails[i].set_data(xdata, ydata)
+
+        # Update other plots
+        sf_line.set_data(tsimu[:frame+1], s_f[:frame+1])
+        velocity_line.set_data(tsimu[:frame+1], velocity[:frame+1])
+        dv_line.set_data(tsimu[:frame+1], dv[:frame+1])
+        tv_line.set_data(tsimu[:frame+1], tv[:frame+1])
+
+        return [car_body, center_of_mass] + wheels + trails + [time_text, sf_line, velocity_line, dv_line, tv_line]
+
+    # Create and start animation
+    ani = FuncAnimation(fig, update, frames=len(tsimu), init_func=init, blit=True, interval=1000/fps)
+    ani.save(save_path, writer='ffmpeg', fps=fps)
     plt.show()
