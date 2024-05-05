@@ -1,16 +1,17 @@
 import rccar2
 
 # Real data and simulation:
-throttle_real_command = 90
+throttle_real_command = 105
+delta_real_command = 63
 
 exp_file_directory = "data"
-exp_file_name = str(throttle_real_command) + ".txt"
-sim_file_directory = str(throttle_real_command)
+exp_file_name = str(throttle_real_command) + "-" + str(delta_real_command) + ".txt"
+sim_file_directory = str(throttle_real_command) + "-" + str(delta_real_command)
 
 # ODE Solver parameters - INPUTS FOR EVERY ANALYSIS
 abserr = 1.0e-8
 relerr = 1.0e-6
-initial_time = 5.35
+initial_time = 1.9
 
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar2.read_exp_file(exp_file_directory, exp_file_name, initial_time)
@@ -35,15 +36,14 @@ throttle2omega = 0.0547/r
 initial_time_throttle = 0
 final_time_throttle = 100
 throttle_type = "step"
-delta_real_command = 0
-initial_time_delta = 0
+initial_time_delta = 1.7
 final_time_delta = stoptime
-delta_type = "straight"
+delta_type = "step"
 
 # Initial conditions
 x0 = Xe0
 y0 = Ye0 
-psi0 = psi0_tout_droit + rccar2.np.pi # in rad
+psi0 = rccar2.np.arctan(1.345)+rccar2.np.pi # in rad
 xp0 = 0.0
 xpp0 = 0.0
 yp0 = 0.0
@@ -72,8 +72,5 @@ voiture.run(tsim, ode_param)
 tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r = rccar2.read_sim_file(sim_file_directory)
 
 # PLOTS
-# rccar2.ComparisonPlot(treal[1:], xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_file_name)
-rccar2.run_all_animations(sim_file_directory, fps=10)
-
-
-
+rccar2.ComparisonPlot(treal, xreal, yreal, vreal, tsim, Xe, Ye, xpsimu, ypsimu, tv, dv, s_f, s_r, exp_file_name)
+# rccar2.run_all_animations(sim_file_directory, fps=10)

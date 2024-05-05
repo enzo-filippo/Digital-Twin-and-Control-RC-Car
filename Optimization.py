@@ -2,18 +2,18 @@ import rccar
 
 sim_file_directory = "curva_t_255_d_20"
 exp_file_directory = "data"
-exp_file_name = "hyper_vitesse_ca_tourne_pas.txt"
+exp_file_name = "110.txt"
 
 # ODE Solver parameters - INPUTS FOR EVERY ANALYSIS
 abserr = 1.0e-8
 relerr = 1.0e-6
-initial_time = 1.8
+initial_time = 4.38
 
 # Getting the real data value and the time date to make the simulation
 treal, tsim, stoptime, numpoints, xreal, yreal, vreal, areal, t_max, length, t0, Xe0, Ye0, v0, a0, psi0_tout_droit = rccar.read_exp_file(exp_file_directory, exp_file_name, initial_time)
 # Variable Parameter values
 mi = 0.59
-C_s = 0.8
+C_s = 0.13
 C_alpha = 0.9
 
 # Fixed Parameter values
@@ -29,11 +29,11 @@ throttle2omega = 0.059/r
 # throttle2omega = 0.05166/r
 
 # Simulation conditions
-throttle_real_command = 90
+throttle_real_command = 110
 initial_time_throttle = 0
 final_time_throttle = 100
 throttle_type = "step"
-delta_real_command = 0
+delta_real_command = 127
 initial_time_delta = 0
 final_time_delta = stoptime
 delta_type = "straight"
