@@ -1,5 +1,4 @@
 import rccar
-import animation
 
 # Real data and simulation:
 throttle_real_command = 30
