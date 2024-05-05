@@ -63,7 +63,7 @@ delta_parameters = rccar.set_delta(delta_real_command, initial_time_delta, final
 print(delta_parameters)
 param = [max_steer_angle, m, Iz, lf, lr, Lw, r, mi, C_s, C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters]
 print(val_0)
-voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
+voiture = rccar.NonLinearBicycle(sim_file_directory, param, val_0)
 voiture.run(tsim, ode_param)
 
 
@@ -78,7 +78,7 @@ min_y = 10000
 for i in range(len(C_s_vector)):
     
     param = [max_steer_angle, m, Iz, lf, lr, Lw, r, mi, C_s_vector[i], C_alpha, Fz, throttle2omega, throttle_parameters, delta_parameters]
-    voiture = rccar.NonLinearBycicle(sim_file_directory, param, val_0)
+    voiture = rccar.NonLinearBicycle(sim_file_directory, param, val_0)
     voiture.run(tsim, ode_param)
     tsimu, xsimu, xpsimu, ysimu, ypsimu, psi, psip, Xe, Ye,  xef1, yef1, xer1, yer1, xef2, yef2, xer2, yer2, tv, dv, s_f, s_r = rccar.read_sim_file(sim_file_directory)
 
