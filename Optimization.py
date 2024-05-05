@@ -51,7 +51,7 @@ psipp0 = 0.0
 #Xe0 = 3.6077931899999998 # real values that comes from the experimental
 #Ye0 = 1.3031706500000002 # real values that comes from the experimental
 var_delta = 0.0
-val_0 = [x0, y0, psi0, xp0, xpp0, yp0, ypp0, psip0, psipp0, Xe0, Ye0, var_delta]
+val_0 = [x0, xp0, y0, yp0, psi0, psip0, Xe0, Ye0]
 
 # Packaging the parameters
 #t = rccar.np.linspace(0,stoptime,numpoints)
