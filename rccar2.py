@@ -3,6 +3,8 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import os
 from scipy.interpolate import interp1d
+from matplotlib.animation import FuncAnimation
+from matplotlib.patches import Rectangle
 
 glissement_f = np.array([])
 glissement_r = np.array([])
